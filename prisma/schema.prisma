@@ -1,0 +1,102 @@
+// 1. Configuration de la connexion
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 2. Modèles pour l'Authentification (NextAuth)
+// ==========================================
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?   // Avatar Discord/Google
+  
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Nos relations personnalisées pour le Five
+  availabilities Availability[]
+  templates      AvailabilityTemplate[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==========================================
+// 3. Modèles pour le Five Planner
+// ==========================================
+
+// Les disponibilités réelles (Liées à une date spécifique)
+model Availability {
+  id        String   @id @default(cuid())
+  userId    String
+  
+  // On stocke la date sous format DateTime
+  date      DateTime 
+  
+  // On stocke l'heure (8 à 23)
+  hour      Int      
+  
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Index pour rendre les recherches ultra rapides
+  @@index([date, hour])
+}
+
+// La "Semaine Type" (Pour la duplication intelligente)
+model AvailabilityTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  
+  // 0 = Dimanche, 1 = Lundi, ..., 6 = Samedi
+  dayOfWeek Int      
+  
+  hour      Int
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Un user ne peut pas avoir deux templates pour le même créneau
+  @@unique([userId, dayOfWeek, hour])
+}

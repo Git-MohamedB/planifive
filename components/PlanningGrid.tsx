@@ -248,7 +248,38 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
       return;
     }
 
+    // --- OPTIMISTIC UPDATE START ---
+    // 1. Update mySlots immediately
     setMySlots(prev => isSelected ? prev.filter(s => s !== key) : [...prev, key]);
+
+    // 2. Update slotDetails immediately (count & users)
+    setSlotDetails(prev => {
+      const currentDetails = prev[key] || { users: [], count: 0 };
+      let newUsers = [...currentDetails.users];
+      let newCount = currentDetails.count;
+
+      if (isSelected) {
+        // Removing
+        newUsers = newUsers.filter(u => u.id !== session.user?.id);
+        newCount = Math.max(0, newCount - 1);
+      } else {
+        // Adding
+        if (session.user && !newUsers.some(u => u.id === session.user?.id)) {
+          newUsers.push({
+            id: session.user.id,
+            name: session.user.name || "Moi",
+            image: session.user.image || null
+          });
+          newCount++;
+        }
+      }
+
+      return {
+        ...prev,
+        [key]: { users: newUsers, count: newCount }
+      };
+    });
+    // --- OPTIMISTIC UPDATE END ---
 
     try {
       await fetch("/api/availability", {
@@ -256,9 +287,12 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date: dateStr, hour }),
       });
+      // We still fetch to ensure sync, but the UI is already updated
       fetchDispos();
     } catch (error) {
       console.error("Error toggling slot:", error);
+      // Revert on error (optional but recommended for robust optimistic UI)
+      fetchDispos();
     }
   };
 
@@ -514,10 +548,11 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                             </div>
                           )}
 
-                          {/* TOOLTIP - Moved to left side to avoid overlap */}
+                          {/* TOOLTIP - Conditional Positioning */}
                           {!isDragging && (
                             <div
-                              className="absolute z-[1000] bottom-full right-full mr-2 pb-2 hidden group-hover:block pointer-events-auto"
+                              className={`absolute z-[1000] bottom-full mb-2 hidden group-hover:block pointer-events-auto ${i === 0 ? "left-full ml-2" : "right-full mr-2"
+                                }`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="bg-[#1A1A1A] border border-[#333] p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] min-w-[220px] flex flex-col gap-3 backdrop-blur-sm relative">
@@ -566,8 +601,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                                   )}
                                 </div>
                               </div>
-                              {/* Arrow pointing to the right (towards the slot) */}
-                              <div className="w-3 h-3 bg-[#1A1A1A] border-r border-t border-[#333] rotate-45 absolute right-[-7px] bottom-4"></div>
+                              {/* Arrow pointing to the slot */}
+                              <div className={`w-3 h-3 bg-[#1A1A1A] border-t border-[#333] rotate-45 absolute bottom-4 ${i === 0 ? "left-[-7px] border-l" : "right-[-7px] border-r"
+                                }`}></div>
                             </div>
                           )}
 

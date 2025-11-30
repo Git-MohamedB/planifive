@@ -1,6 +1,6 @@
 "use client";
 
-import { Save, Copy, X } from "lucide-react";
+import { Save, Copy, X, Trash2 } from "lucide-react";
 import { createPortal } from "react-dom";
 
 interface ConfirmModalProps {
@@ -9,7 +9,7 @@ interface ConfirmModalProps {
     onConfirm: () => void;
     title: string;
     message: string;
-    type: "save" | "apply";
+    type: "save" | "apply" | "danger";
 }
 
 export default function ConfirmModal({
@@ -51,6 +51,7 @@ export default function ConfirmModal({
                     border: '1px solid #333',
                     maxWidth: '28rem',
                     width: '100%',
+                    minHeight: '26rem',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
                     overflow: 'hidden',
                 }}
@@ -67,17 +68,7 @@ export default function ConfirmModal({
                 }}>
                     <button
                         onClick={onClose}
-                        style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            right: '1rem',
-                            padding: '0.5rem',
-                            borderRadius: '9999px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#9CA3AF',
-                            cursor: 'pointer',
-                        }}
+                        className="absolute top-4 right-4 p-3 rounded-full bg-transparent border-none text-[#B3B3B3] cursor-pointer transition-all duration-300 hover:bg-white/10 hover:text-white flex items-center justify-center"
                     >
                         <X size={18} />
                     </button>
@@ -86,11 +77,13 @@ export default function ConfirmModal({
                         <div style={{
                             padding: '1rem',
                             borderRadius: '1rem',
-                            background: type === "save" ? 'rgba(30, 215, 96, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-                            border: type === "save" ? '1px solid rgba(30, 215, 96, 0.3)' : '1px solid rgba(255, 255, 255, 0.3)',
+                            background: type === "save" ? 'rgba(30, 215, 96, 0.1)' : type === "danger" ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+                            border: type === "save" ? '1px solid rgba(30, 215, 96, 0.3)' : type === "danger" ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.3)',
                         }}>
                             {type === "save" ? (
                                 <Save size={32} color="#1ED760" />
+                            ) : type === "danger" ? (
+                                <Trash2 size={32} color="#EF4444" />
                             ) : (
                                 <Copy size={32} color="white" />
                             )}
@@ -119,43 +112,21 @@ export default function ConfirmModal({
                 </div>
 
                 {/* Actions */}
-                <div style={{ padding: '0 1.5rem 1.5rem', display: 'flex', gap: '0.75rem' }}>
+                <div className="px-6 pt-8 pb-24 flex justify-center" style={{ gap: '2rem' }}>
                     <button
                         onClick={onClose}
-                        style={{
-                            flex: 1,
-                            padding: '0.875rem 1.5rem',
-                            borderRadius: '0.75rem',
-                            fontWeight: 'bold',
-                            fontSize: '0.875rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            background: '#222',
-                            color: 'white',
-                            border: '1px solid #333',
-                            cursor: 'pointer',
-                        }}
+                        className="btn-secondary btn-md uppercase tracking-wider font-bold"
                     >
                         Annuler
                     </button>
                     <button
                         onClick={handleConfirm}
-                        style={{
-                            flex: 1,
-                            padding: '0.875rem 1.5rem',
-                            borderRadius: '0.75rem',
-                            fontWeight: 'bold',
-                            fontSize: '0.875rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            background: type === "save"
-                                ? 'linear-gradient(to right, #1ED760, #17B54D)'
-                                : 'linear-gradient(to right, white, #E5E7EB)',
-                            color: 'black',
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-                        }}
+                        className={`btn-md uppercase tracking-wider font-bold ${type === "save"
+                                ? 'btn-primary'
+                                : type === "danger"
+                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                    : 'btn-accent'
+                            }`}
                     >
                         Confirmer
                     </button>

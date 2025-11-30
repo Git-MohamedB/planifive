@@ -9,36 +9,32 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   callbacks: {
+    signIn: async ({ user, account, profile }) => {
+      // Basic check to ensure we have necessary data
+      if (!user || !account) return false;
+      return true;
+    },
     session: async ({ session, user, token }) => {
       // Try to get data from token first (JWT strategy)
       if (token) {
+        if (!session.user) session.user = {} as any;
         session.user.id = token.sub!;
-        // @ts-ignore
         session.user.name = token.name;
-        // @ts-ignore
         session.user.image = token.picture;
-        // @ts-ignore
         session.user.email = token.email;
       }
       // Then try from user (database strategy)
       else if (user) {
-        // @ts-ignore
+        if (!session.user) session.user = {} as any;
         session.user.id = user.id;
-        // @ts-ignore
         session.user.name = user.name;
-        // @ts-ignore
         session.user.image = user.image;
-        // @ts-ignore
         session.user.email = user.email;
       }
-
-      console.log("=== AUTH.TS SESSION CALLBACK ===");
-      console.log("Token:", token);
-      console.log("User:", user);
-      console.log("Final session:", session);
 
       return session;
     },

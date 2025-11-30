@@ -1,28 +1,42 @@
 "use client";
 
 import { useState, useEffect, Fragment } from "react";
-import { ChevronLeft, ChevronRight, Save, Copy, Loader2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Copy, Loader2, Calendar, Megaphone, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import ConfirmModal from "./ConfirmModal";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 const DAYS = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"];
 const MATCH_SIZE = 10;
 
-type UserInfo = { name: string | null; image: string | null };
+type UserInfo = { id: string; name: string | null; image: string | null };
 type SlotData = { users: UserInfo[]; count: number };
 
 // Nouvelle prop pour communiquer avec la Navbar
-export type GoldenSlot = { day: string; hour: number; date: Date };
+export type GoldenSlot = { day: string; hour: number; date: Date; count?: number; type?: 'golden' | 'best' };
 
-interface PlanningGridProps {
-  onUpdateStats?: (slots: GoldenSlot[]) => void;
+interface Call {
+  id: string;
+  date: string; // ISO string
+  hour: number;
+  location: string;
+  duration: number;
+  creatorId: string;
+  creator: { name: string | null; image: string | null };
 }
 
-export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
+interface PlanningGridProps {
+  onUpdateStats?: (slots: GoldenSlot[], potentialSlots: GoldenSlot[]) => void;
+  onOpenCallModal?: (date?: string, hour?: string) => void;
+}
+
+export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: PlanningGridProps) {
+  const { data: session, status } = useSession();
   const [currentMonday, setCurrentMonday] = useState(getMonday(new Date()));
   const [mySlots, setMySlots] = useState<string[]>([]);
   const [slotDetails, setSlotDetails] = useState<Record<string, SlotData>>({});
+  const [calls, setCalls] = useState<Call[]>([]); // Active calls
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [direction, setDirection] = useState(0);
 
@@ -32,52 +46,110 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
 
   // États pour le modal de confirmation
   const [modalOpen, setModalOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<"save" | "apply" | null>(null);
+  const [pendingAction, setPendingAction] = useState<"save" | "apply" | "deleteCall" | null>(null);
+  const [callToDelete, setCallToDelete] = useState<string | null>(null);
 
-  useEffect(() => { fetchDispos(); }, [currentMonday]);
+  useEffect(() => {
+    fetchDispos();
+    fetchCalls();
+  }, [currentMonday]);
 
-  // Calculer les stats (Matchs Gold) à chaque changement de données
+  // Calculer les stats (Matchs Gold et Potentiels) à chaque changement de données
   useEffect(() => {
     if (!onUpdateStats) return;
 
-    let goldCount = 0;
-    // On parcourt les 7 jours affichés
+    const goldenSlots: GoldenSlot[] = [];
+    const potentialCandidates: GoldenSlot[] = [];
+    let maxCount = 0;
+
+    // 1. Extraire toutes les dates uniques des données disponibles (slotDetails)
+    const uniqueDates = new Set<string>();
+
+    // Ajouter les dates de slotDetails
+    Object.keys(slotDetails).forEach(key => {
+      const parts = key.split('-');
+      // key format: YYYY-MM-DD-H
+      if (parts.length >= 4) {
+        const dateStr = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        uniqueDates.add(dateStr);
+      }
+    });
+
+    // Ajouter les dates de la semaine affichée pour s'assurer qu'on voit au moins la semaine courante
     for (let i = 0; i < 7; i++) {
       const date = addDays(currentMonday, i);
-      const dateStr = formatDateLocal(date);
+      uniqueDates.add(formatDateLocal(date));
+    }
+
+    // Convertir en tableau et trier
+    const sortedDates = Array.from(uniqueDates).sort();
+
+    // 2. Parcourir toutes les dates
+    sortedDates.forEach(dateStr => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      // getDay(): 0=Sun, 1=Mon... We want 0=Mon...6=Sun
+      const dayIndex = dateObj.getDay() === 0 ? 6 : dateObj.getDay() - 1;
+      const dayName = DAYS[dayIndex];
 
       // On cherche les débuts de séquences de 3h (ex: 20h, 21h, 22h pleines)
       for (let h = 8; h <= 21; h++) { // Max 21 car 21+2 = 23
-        const h1 = (slotDetails[`${dateStr}-${h}`]?.count || 0) >= MATCH_SIZE;
-        const h2 = (slotDetails[`${dateStr}-${h + 1}`]?.count || 0) >= MATCH_SIZE;
-        const h3 = (slotDetails[`${dateStr}-${h + 2}`]?.count || 0) >= MATCH_SIZE;
+        const slot1 = slotDetails[`${dateStr}-${h}`];
+        const slot2 = slotDetails[`${dateStr}-${h + 1}`];
+        const slot3 = slotDetails[`${dateStr}-${h + 2}`];
 
-        if (h1 && h2 && h3) {
-          goldCount++;
-          // On saute les heures suivantes pour ne pas compter 2 fois la même séquence si elle se chevauche
-          // (Optionnel selon ta logique, ici je compte les blocs distincts qui commencent)
+        const c1 = slot1?.count || 0;
+        const c2 = slot2?.count || 0;
+        const c3 = slot3?.count || 0;
+
+        // Golden Slot (30/30)
+        if (c1 >= MATCH_SIZE && c2 >= MATCH_SIZE && c3 >= MATCH_SIZE) {
+          goldenSlots.push({ day: dayName, hour: h, date: dateObj, type: 'golden' });
+        }
+        // Potential Slot (Not full but has players in ALL 3 slots)
+        else {
+          // Calculate intersection of users present in all 3 slots
+          const users1 = slot1?.users || [];
+          const users2 = slot2?.users || [];
+          const users3 = slot3?.users || [];
+
+          // Find users present in all 3 lists
+          const commonUsersCount = users1.filter(u1 =>
+            users2.some(u2 => u2.id === u1.id) &&
+            users3.some(u3 => u3.id === u1.id)
+          ).length;
+
+          if (commonUsersCount > 0) {
+            potentialCandidates.push({ day: dayName, hour: h, date: dateObj, count: commonUsersCount, type: 'best' });
+            if (commonUsersCount > maxCount) {
+              maxCount = commonUsersCount;
+            }
+          }
         }
       }
-    }
-    const goldenSlots: GoldenSlot[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = addDays(currentMonday, i);
-      const dateStr = formatDateLocal(date);
-      for (let h = 8; h <= 21; h++) {
-        const h1 = (slotDetails[`${dateStr}-${h}`]?.count || 0) >= MATCH_SIZE;
-        const h2 = (slotDetails[`${dateStr}-${h + 1}`]?.count || 0) >= MATCH_SIZE;
-        const h3 = (slotDetails[`${dateStr}-${h + 2}`]?.count || 0) >= MATCH_SIZE;
-        if (h1 && h2 && h3) {
-          goldenSlots.push({ day: DAYS[i], hour: h, date: date });
-        }
-      }
-    }
-    onUpdateStats(goldenSlots);
+    });
+
+    // Filtrer pour ne garder que ceux qui ont le maxCount (si maxCount > 0)
+    const bestPotentialSlots = maxCount > 0
+      ? potentialCandidates.filter(p => p.count === maxCount)
+      : [];
+
+    onUpdateStats(goldenSlots, bestPotentialSlots);
   }, [slotDetails, currentMonday, onUpdateStats]);
 
   useEffect(() => {
     const handleGlobalMouseUp = async () => {
-      if (isDragging && dragStart && dragEnd) applyDragSelection();
+      // If dragStart equals dragEnd, it's a click, so let onClick handle it.
+      // We only apply drag selection if we actually dragged across multiple slots (or at least moved).
+      // However, checking strictly equality might be tricky if we want drag-to-select single slot to work?
+      // Actually, standard behavior: Click = Toggle. Drag = Set range.
+      // If I click, dragStart == dragEnd.
+      // If I want to fix the double toggle, I should skip applyDragSelection if start == end.
+      if (isDragging && dragStart && dragEnd) {
+        if (dragStart.dayIndex !== dragEnd.dayIndex || dragStart.hour !== dragEnd.hour) {
+          applyDragSelection();
+        }
+      }
       setIsDragging(false);
       setDragStart(null);
       setDragEnd(null);
@@ -97,8 +169,18 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
     } catch (error) { console.error(error); }
   };
 
+  const fetchCalls = async () => {
+    try {
+      const res = await fetch("/api/calls");
+      if (res.ok) {
+        const data = await res.json();
+        setCalls(data);
+      }
+    } catch (error) { console.error(error); }
+  };
+
   const applyDragSelection = async () => {
-    if (!dragStart || !dragEnd) return;
+    if (!dragStart || !dragEnd || !session?.user?.id) return;
     const minDay = Math.min(dragStart.dayIndex, dragEnd.dayIndex);
     const maxDay = Math.max(dragStart.dayIndex, dragEnd.dayIndex);
     const minHour = Math.min(dragStart.hour, dragEnd.hour);
@@ -129,6 +211,7 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
       }
     }
     setMySlots(newSlots);
+
     for (const slot of slotsToUpdate) {
       await fetch("/api/availability", {
         method: "POST",
@@ -140,11 +223,43 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
   };
 
   const toggleSlot = async (dateStr: string, hour: number) => {
+    if (status !== "authenticated") {
+      alert("Connecte-toi pour voter !");
+      return;
+    }
+
     const key = `${dateStr}-${hour}`;
     const isSelected = mySlots.includes(key);
+
+    // Check if this slot is part of an active call created by the current user
+    const callOnSlot = calls.find(c =>
+      new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
+      c.hour <= hour &&
+      hour < c.hour + (c.duration === 90 ? 4 : 3)
+    );
+
+    const isCreator = callOnSlot?.creatorId === session?.user?.id;
+
+    // If creator tries to deselect a slot of their call -> Delete the call
+    if (isCreator && isSelected) {
+      setCallToDelete(callOnSlot.id);
+      setPendingAction("deleteCall");
+      setModalOpen(true);
+      return;
+    }
+
     setMySlots(prev => isSelected ? prev.filter(s => s !== key) : [...prev, key]);
-    await fetch("/api/availability", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: dateStr, hour }), });
-    fetchDispos();
+
+    try {
+      await fetch("/api/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateStr, hour }),
+      });
+      fetchDispos();
+    } catch (error) {
+      console.error("Error toggling slot:", error);
+    }
   };
 
   const handleAction = async (action: "save" | "apply") => {
@@ -157,6 +272,22 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
   const executeAction = async () => {
     if (!pendingAction) return;
     console.log("🟢 executeAction appelé avec pendingAction:", pendingAction);
+
+    if (pendingAction === "deleteCall" && callToDelete) {
+      try {
+        await fetch(`/api/calls?id=${callToDelete}`, { method: "DELETE" });
+        setCalls(calls.filter(c => c.id !== callToDelete));
+        // Also refresh slots to remove the blue border immediately
+        fetchDispos();
+      } catch (e) {
+        console.error("Failed to delete call", e);
+      }
+      setLoadingAction(null);
+      setPendingAction(null);
+      setCallToDelete(null);
+      setModalOpen(false);
+      return;
+    }
 
     setLoadingAction(pendingAction);
     const body: any = { action: pendingAction };
@@ -178,6 +309,20 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
     if (pendingAction === "apply") await fetchDispos();
     setLoadingAction(null);
     setPendingAction(null);
+    setModalOpen(false); // Close modal
+  };
+
+  const handleDeleteCall = async (callId: string) => {
+    try {
+      const res = await fetch(`/api/calls?id=${callId}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchCalls();
+      } else {
+        alert("Erreur lors de la suppression");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const changeWeek = (dir: number) => {
@@ -223,21 +368,34 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
       <div className="w-full h-full bg-[#121212] rounded-[32px] border border-[#222] flex flex-col overflow-hidden shadow-2xl relative select-none">
 
         {/* HEADER GRILLE */}
-        <div className="flex items-center justify-between px-6 py-3 bg-[#181818] border-b border-[#282828] shrink-0">
-          <div className="flex items-center gap-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
-            <button onClick={() => changeWeek(-1)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"><ChevronLeft size={18} /></button>
+        <div className="flex items-center justify-between px-6 bg-[#181818] border-b border-[#282828] shrink-0 h-16">
+          <div className="flex items-center gap-4">
+            <button onClick={() => changeWeek(-1)} className="p-2 hover:bg-gray-700/50 rounded-full text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95"><ChevronLeft size={18} /></button>
             <div className="flex items-center gap-2 px-2">
               <Calendar size={14} className="text-[#1ED760]" />
               <span className="text-sm font-bold text-white uppercase tracking-wider min-w-[140px] text-center">
                 {currentMonday.toLocaleDateString("fr-FR", { month: "long", day: "numeric" })}
               </span>
             </div>
-            <button onClick={() => changeWeek(1)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"><ChevronRight size={18} /></button>
+            <button onClick={() => changeWeek(1)} className="p-2 hover:bg-gray-700/50 rounded-full text-gray-400 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95"><ChevronRight size={18} /></button>
           </div>
 
-          <div className="flex gap-3">
-            <ActionButton onClick={() => handleAction("save")} loading={loadingAction === "save"} label="Sauver Modèle" icon={<Save size={14} />} />
-            <ActionButton onClick={() => handleAction("apply")} loading={loadingAction === "apply"} label="Appliquer" icon={<Copy size={14} />} primary />
+          <div className="flex h-full">
+            <ActionButton
+              onClick={() => handleAction("save")}
+              loading={loadingAction === "save"}
+              label="Sauver Modèle"
+              icon={<Save size={14} />}
+              green
+              className="rounded-l-full rounded-r-none pr-3"
+            />
+            <ActionButton
+              onClick={() => handleAction("apply")}
+              loading={loadingAction === "apply"}
+              label="Appliquer"
+              icon={<Copy size={14} />}
+              className="rounded-r-full rounded-l-none pl-3 border-l border-[#333]"
+            />
           </div>
         </div>
 
@@ -288,51 +446,92 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
                       const isFull = count >= MATCH_SIZE;
                       const isGold = isGoldenSlot(dateStr, hour);
 
-                      let bgClass = "bg-transparent hover:bg-[#1E1E1E]";
+                      // Check for active call
+                      const activeCall = calls.find(
+                        (c) =>
+                          new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
+                          hour >= c.hour &&
+                          hour < c.hour + (c.duration === 90 ? 4 : 3)
+                      );
+
+                      // Dynamic Styles
+                      let bgClass = "bg-[#1A1A1A]"; // Default dark
                       let extraClasses = "";
 
-                      // Priorité : Golden slot > Sélectionné > Plein > Avec des gens > Vide
-                      // MAIS : si c'est sélectionné ET golden, on montre quand même le golden
-                      if (isGold) {
-                        // Créneau fait partie d'un match de 3h
-                        extraClasses = "golden-slot";
-                        bgClass = ""; // La classe golden-slot gère le background via l'animation
-                      } else if (isSelected) {
-                        // Créneau sélectionné par moi (et PAS dans un golden slot)
-                        bgClass = "bg-[#1ED760] hover:bg-[#1ed760]/90";
+                      // We use inline styles for the background to ensure it overrides everything
+                      const cellStyle: React.CSSProperties = {};
+
+                      if (isSelected) {
+                        // FORCE GREEN via inline style
+                        cellStyle.backgroundColor = '#22c55e'; // green-500
+                        cellStyle.zIndex = 10; // Ensure it's on top
+                        cellStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)'; // Reduced Green glow
+                      } else if (isGold) {
+                        bgClass = "bg-yellow-500/20 border-yellow-500/50";
                       } else if (isFull) {
-                        // Créneau plein mais pas golden et pas sélectionné par moi
-                        bgClass = "bg-red-500/10 hover:bg-red-500/20";
-                      } else if (count > 0) {
-                        // Créneau avec du monde mais pas plein
-                        bgClass = "bg-[#222] hover:bg-[#2A2A2A]";
+                        bgClass = "bg-red-500/20";
+                      } else if (activeCall) {
+                        bgClass = "bg-[#5865F2]/20";
                       }
 
-                      if (isDragZone) bgClass = "bg-[#1ED760]/50";
+                      // Add blue border/glow if active call
+                      if (activeCall) {
+                        extraClasses += " border-[#5865F2]";
+                        // Add blue glow/shadow
+                        if (!isSelected) {
+                          // If not selected, we apply the blue glow via class or style. 
+                          // Let's use style to be safe and consistent with the user request for "degradé autour"
+                          cellStyle.boxShadow = 'inset 0 0 20px rgba(88,101,242,0.3), 0 0 15px rgba(88, 101, 242, 0.6)';
+                        } else {
+                          // If selected, we have green bg + blue border. 
+                          // User wants blue gradient around it? "le bleu ait le degradé autour bleu"
+                          // So we combine green bg with blue outer glow?
+                          // Let's try to combine shadows.
+                          cellStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 15px rgba(88, 101, 242, 0.8)'; // Blue outer glow dominates
+                        }
 
-                      return (
+                        if (isSelected) {
+                          extraClasses += " border-2";
+                        } else {
+                          extraClasses += " border";
+                        }
+                      } else if (!isSelected && !isGold && !isFull) {
+                        extraClasses += " hover:bg-[#252525]";
+                      } return (
                         <div
                           key={key}
                           onMouseDown={() => onMouseDown(i, hour)}
                           onMouseEnter={() => onMouseEnter(i, hour)}
-                          className={`relative cursor-pointer transition-colors duration-75 group ${bgClass} ${extraClasses}`}
+                          onClick={() => toggleSlot(dateStr, hour)}
+                          style={cellStyle}
+                          className={`relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center ${bgClass} ${extraClasses} group-hover:z-50`}
                         >
                           {count > 0 && (
                             <div className="w-full h-full flex items-center justify-center pointer-events-none">
-                              <span className={`text-sm font-bold ${isSelected || isGold ? 'text-black' : (isFull ? 'text-red-500' : 'text-white')}`}>
+                              <span className={`text-sm font-bold ${isSelected || isGold ? 'text-black' : (isFull ? 'text-red-500' : (activeCall ? 'text-[#5865F2]' : 'text-white'))}`}>
                                 {count}
                               </span>
                             </div>
                           )}
 
-                          {/* TOOLTIP MIS A JOUR : Photos minuscules (w-3 h-3) et compactes */}
-                          {count > 0 && !isDragging && (
-                            <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block pointer-events-none">
-                              <div className="bg-[#1A1A1A] border border-[#333] p-3 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] min-w-[200px] flex flex-col gap-3">
+                          {/* TOOLTIP - Moved to left side to avoid overlap */}
+                          {!isDragging && (
+                            <div
+                              className="absolute z-[1000] bottom-full right-full mr-2 pb-2 hidden group-hover:block pointer-events-auto"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="bg-[#1A1A1A] border border-[#333] p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] min-w-[220px] flex flex-col gap-3 backdrop-blur-sm relative">
                                 <div className="flex justify-between items-center border-b border-[#333] pb-2">
-                                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">JOUEURS</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">JOUEURS</span>
+                                    {/* User requested to remove the call button when people are present */}
+                                  </div>
                                   {isGold ? (
                                     <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest animate-pulse">MATCH 3H</span>
+                                  ) : activeCall ? (
+                                    <span className="text-[9px] font-black text-[#5865F2] uppercase tracking-widest flex items-center gap-1">
+                                      <Megaphone size={10} /> APPEL EN COURS
+                                    </span>
                                   ) : (
                                     <span className={`text-[10px] font-black ${isFull ? 'text-red-500' : 'text-[#1ED760]'}`}>
                                       {count}/{MATCH_SIZE}
@@ -340,10 +539,18 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
                                   )}
                                 </div>
 
+                                {activeCall && (
+                                  <div className="bg-[#5865F2]/10 p-2 rounded border border-[#5865F2]/30 text-xs text-gray-300 mb-2 relative group/call">
+                                    <div className="font-bold text-[#5865F2] mb-1">📍 {activeCall.location}</div>
+                                    <div>Appel lancé par {activeCall.creator.name}</div>
+
+
+                                  </div>
+                                )}
+
                                 <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto custom-scrollbar">
                                   {details.users.map((u, idx) => (
                                     <div key={idx} className="flex items-center gap-8">
-                                      {/* Logo utilisateur */}
                                       <img
                                         src={u.image || ""}
                                         className="w-0.5 h-0.5 rounded-full bg-black object-cover flex-shrink-0"
@@ -353,9 +560,22 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
                                       <span className="text-[14px] text-gray-300 font-bold truncate ml-16">{u.name}</span>
                                     </div>
                                   ))}
+
+                                  {details.users.length === 0 && !activeCall && (
+                                    <div className="text-xs text-gray-600 italic text-center py-2">Aucun joueur</div>
+                                  )}
                                 </div>
                               </div>
-                              <div className="w-3 h-3 bg-[#1A1A1A] border-r border-b border-[#333] rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1.5"></div>
+                              {/* Arrow pointing to the right (towards the slot) */}
+                              <div className="w-3 h-3 bg-[#1A1A1A] border-r border-t border-[#333] rotate-45 absolute right-[-7px] bottom-4"></div>
+                            </div>
+                          )}
+
+                          {/* Call Action in Tooltip (or Context Menu) */}
+                          {/* We use the same tooltip for simplicity, but we add a button if no call exists */}
+                          {!activeCall && !isGold && count < MATCH_SIZE && (
+                            <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col gap-2 pointer-events-auto">
+                              {/* Existing tooltip content is above, we might need to merge them or just add the button to the existing tooltip */}
                             </div>
                           )}
                         </div>
@@ -376,32 +596,38 @@ export default function PlanningGrid({ onUpdateStats }: PlanningGridProps) {
           console.log("🔴 Modal fermé");
           setModalOpen(false);
           setPendingAction(null);
+          setCallToDelete(null);
         }}
         onConfirm={executeAction}
-        title={pendingAction === "save" ? "Sauvegarder le Modèle" : "Appliquer le Modèle"}
-        message={
-          pendingAction === "save"
-            ? "Voulez-vous sauvegarder cette semaine comme modèle de référence ?"
-            : "Voulez-vous appliquer le modèle sauvegardé à cette semaine ?"
+        title={
+          pendingAction === "deleteCall" ? "Supprimer l'appel ?" :
+            pendingAction === "save" ? "Sauvegarder le Modèle" : "Appliquer le Modèle"
         }
-        type={pendingAction || "save"}
+        message={
+          pendingAction === "deleteCall"
+            ? "Êtes-vous sûr de vouloir supprimer votre appel ? Cela désinscrira tous les participants."
+            : pendingAction === "save"
+              ? "Voulez-vous sauvegarder cette semaine comme modèle de référence ?"
+              : "Voulez-vous appliquer le modèle sauvegardé à cette semaine ?"
+        }
+        type={pendingAction === "deleteCall" ? "danger" : (pendingAction || "save")}
       />
     </>
   );
 }
 
-// UTILS
-function ActionButton({ onClick, loading, label, icon, primary = false }: any) {
+function ActionButton({ onClick, loading, label, icon, green = false, className = "" }: any) {
   return (
     <button
       onClick={onClick}
       disabled={loading}
       className={`
-        flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all hover:scale-105
-        ${primary
-          ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-          : 'bg-[#222] text-white border border-[#333] hover:border-[#555]'}
-        disabled:opacity-50
+        flex items-center gap-2 px-4 font-bold text-xs uppercase tracking-wider transition-all duration-300 hover:scale-105 h-full border-none outline-none ring-0 rounded-full
+        ${green
+          ? 'bg-gradient-to-r from-[#22C55E] to-[#16a34a] text-black shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:from-[#16a34a] hover:to-[#15803d] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+          : 'bg-gradient-to-br from-[#181818] to-[#2a2a2a] text-gray-300 hover:from-[#2a2a2a] hover:to-[#404040] hover:text-white hover:shadow-lg'}
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none
+        ${className}
       `}
     >
       {loading ? <Loader2 className="animate-spin" size={14} /> : icon}
@@ -413,16 +639,18 @@ function ActionButton({ onClick, loading, label, icon, primary = false }: any) {
 function getMonday(d: Date) {
   const date = new Date(d);
   const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
   const monday = new Date(date.setDate(diff));
   monday.setHours(0, 0, 0, 0);
   return monday;
 }
+
 function addDays(date: Date, days: number) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 }
+
 function formatDateLocal(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

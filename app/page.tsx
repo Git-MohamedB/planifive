@@ -4,12 +4,14 @@ import { useSession, signIn } from "next-auth/react";
 import PlanningGrid, { GoldenSlot } from "@/components/PlanningGrid";
 import Navbar from "@/components/Navbar";
 import { LayoutGrid } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import CallModal from "@/components/CallModalFinalV2";
 import { motion } from "framer-motion";
 
 export default function Home() {
+  // Force rebuild
   const { data: session } = useSession();
-  const [goldenSlots, setGoldenSlots] = useState<GoldenSlot[]>([]); // Liste de créneaux 3H
+  const [stats, setStats] = useState<{ golden: GoldenSlot[], potential: GoldenSlot[] }>({ golden: [], potential: [] });
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
@@ -25,7 +27,22 @@ export default function Home() {
     setParticles(newParticles);
   }, []);
 
+  const handleUpdateStats = useCallback((golden: GoldenSlot[], potential: GoldenSlot[]) => {
+    setStats({ golden, potential });
+  }, []);
+
+  const [callModal, setCallModal] = useState<{ isOpen: boolean; date?: string; hour?: string }>({ isOpen: false });
+
+  const openCallModal = useCallback((date?: string, hour?: string) => {
+    setCallModal({ isOpen: true, date, hour });
+  }, []);
+
+  const closeCallModal = useCallback(() => {
+    setCallModal({ ...callModal, isOpen: false });
+  }, [callModal]);
+
   if (!session) {
+    // ... (Login screen code omitted for brevity, it remains unchanged)
     return (
       <div
         style={{
@@ -153,9 +170,9 @@ export default function Home() {
               }}
             />
             <img
-              src="/favicon.ico"
-              alt="Five Planner Logo"
-              style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' }}
+              src="/logo-five.png"
+              alt="Planifive Logo"
+              style={{ width: '100px', height: '100px', borderRadius: '50%', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))', objectFit: 'cover' }}
             />
           </motion.div>
 
@@ -168,7 +185,7 @@ export default function Home() {
               letterSpacing: '-0.02em',
               lineHeight: 1
             }}>
-              FIVE PLANNER
+              Planifive
             </h1>
             <p style={{
               color: 'rgba(255, 255, 255, 0.6)',
@@ -187,8 +204,8 @@ export default function Home() {
             onClick={() => signIn("discord")}
             style={{
               width: '100%',
-              padding: '16px',
-              borderRadius: '16px',
+              padding: '18px',
+              borderRadius: '20px',
               background: '#5865F2',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               boxShadow: '0 4px 12px rgba(88, 101, 242, 0.3)',
@@ -242,15 +259,29 @@ export default function Home() {
     <div className="h-screen w-screen bg-[#050505] text-white font-sans flex flex-col overflow-hidden p-3 gap-3">
 
       {/* HEADER PREMIUM (Navbar) */}
-      <Navbar goldenSlots={goldenSlots} />
+      <Navbar
+        goldenSlots={stats.golden}
+        potentialSlots={stats.potential}
+        onOpenCallModal={() => openCallModal()}
+      />
 
       {/* MAIN CONTENT */}
       <main className="flex-1 min-h-0 w-full relative px-12 pt-12 pb-8 flex justify-center">
         <div className="w-full max-w-[1600px] h-full">
           {/* On passe la fonction setGoldenSlots pour mettre à jour la navbar */}
-          <PlanningGrid onUpdateStats={setGoldenSlots} />
+          <PlanningGrid
+            onUpdateStats={handleUpdateStats}
+            onOpenCallModal={openCallModal}
+          />
         </div>
       </main>
+
+      <CallModal
+        isOpen={callModal.isOpen}
+        onClose={closeCallModal}
+        initialDate={callModal.date}
+        initialHour={callModal.hour}
+      />
     </div>
   );
 }

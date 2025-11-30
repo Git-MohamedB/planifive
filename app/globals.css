@@ -5,14 +5,364 @@
 /* RESET TOTAL : OBLIGATOIRE POUR LE FULL SCREEN */
 html,
 body {
-  height: 100%;
+  min-height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;
+  /* overflow: hidden; REMOVED TO ALLOW SCROLLING */
+  overflow-x: hidden;
+}
+
+/* ===== SYSTÈME DE BOUTONS MODERNES ===== */
+
+/* Boutons primaires - Style moderne avec effets de glow */
+.btn-primary {
+  background: linear-gradient(135deg, #1ED760, #22c55e);
+  color: white;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 0 20px rgba(30, 215, 96, 0.3);
+  transform: scale(1);
+  border: none;
+  outline: none;
+  position: relative;
   overflow: hidden;
-  /* ADIEU LE SCROLL */
-  /* background-color: #000000; */
-  /* COMMENTÉ - bloquait l'arrière-plan de la page de connexion */
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 0 30px rgba(30, 215, 96, 0.5), 0 8px 25px rgba(30, 215, 96, 0.2);
+  transform: scale(1.02);
+}
+
+.btn-primary:active {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  transform: scale(0.98);
+}
+
+.btn-primary:focus {
+  outline: 2px solid rgba(30, 215, 96, 0.7);
+  outline-offset: 2px;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+/* Boutons secondaires - Style élégant et subtil */
+.btn-secondary {
+  background: linear-gradient(135deg, #2a2a2a, #333333);
+  color: white;
+  font-weight: 500;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: scale(1);
+  border: none;
+  outline: none;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #333333, #404040);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 8px 25px rgba(64, 64, 64, 0.2);
+  transform: scale(1.02);
+}
+
+.btn-secondary:active {
+  background: linear-gradient(135deg, #262626, #2a2a2a);
+  transform: scale(0.98);
+}
+
+.btn-secondary:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+/* Boutons d'accent - Pour les actions importantes */
+.btn-accent {
+  background: linear-gradient(135deg, #ff6b35, #ff5722);
+  color: white;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  transform: scale(1);
+  border: none;
+  outline: none;
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #ff5722, #e64a19);
+  box-shadow: 0 0 25px rgba(255, 107, 53, 0.4), 0 8px 25px rgba(255, 107, 53, 0.2);
+  transform: scale(1.02);
+}
+
+.btn-accent:active {
+  background: linear-gradient(135deg, #e64a19, #d84315);
+  transform: scale(0.98);
+}
+
+.btn-accent:focus {
+  outline: 2px solid rgba(255, 107, 53, 0.7);
+  outline-offset: 2px;
+}
+
+/* Boutons de danger - Pour les actions destructives */
+.btn-danger {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  color: white;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+  transform: scale(1);
+  border: none;
+  outline: none;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #ff3742, #ff2d3d);
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.4), 0 8px 25px rgba(255, 71, 87, 0.2);
+  transform: scale(1.02);
+}
+
+.btn-danger:active {
+  background: linear-gradient(135deg, #ff2d3d, #e02436);
+  transform: scale(0.98);
+}
+
+.btn-danger:focus {
+  outline: 2px solid rgba(255, 71, 87, 0.7);
+  outline-offset: 2px;
+}
+
+/* Boutons fantômes - Style minimaliste */
+.btn-ghost {
+  background: transparent;
+  color: #B3B3B3;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  outline: none;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+.btn-ghost:active {
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(0.98);
+}
+
+.btn-ghost:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+/* Boutons avec effet glass */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-radius: 50px;
+  padding: 12px 24px;
+  transition: all 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.btn-glass:active {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(0.98);
+}
+
+.btn-glass:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+/* États des boutons */
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-loading {
+  position: relative;
+  cursor: wait;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin: auto;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tailles de boutons */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 32px;
+}
+
+.btn-md {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 50px;
+}
+
+.btn-lg {
+  padding: 16px 32px;
+  font-size: 18px;
+  border-radius: 60px;
+}
+
+.btn-xl {
+  padding: 20px 48px;
+  font-size: 20px;
+  border-radius: 70px;
+}
+
+/* ===== ÉLÉMENTS D'AFFICHAGE AVEC BORDS ARRONDIS ===== */
+
+/* Cartes avec bords arrondis */
+.card-rounded {
+  background: #181818;
+  border-radius: 24px;
+  border: 1px solid #282828;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease-out;
+}
+
+.card-rounded:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: #404040;
+  transform: translateY(-2px);
+}
+
+/* Conteneurs avec effet glass */
+.container-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Avatars arrondis */
+.avatar-rounded {
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease-out;
+}
+
+.avatar-rounded:hover {
+  transform: scale(1.05);
+}
+
+/* Indicateurs de statut */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease-out;
+}
+
+.status-online {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-offline {
+  background: rgba(128, 128, 128, 0.2);
+  color: #808080;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.status-busy {
+  background: rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+/* Amélioration des focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Suppression de toutes les bordures par défaut */
+button,
+input,
+select,
+textarea {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Smooth transitions pour tous les éléments interactifs */
+button,
+input,
+select,
+a {
+  transition: all 0.2s ease;
 }
 
 /* Utilitaires pour centrer */
@@ -67,4 +417,353 @@ body {
       rgba(255, 255, 255, 0.3),
       transparent);
   animation: goldenShimmer 3s ease-in-out infinite;
+}
+
+
+/* ===== VIBRANT FRAME DESIGN ===== */
+.vf-main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* height: 100%; REMOVED to prevent grid stretching */
+  width: 100%;
+  max-width: 380px;
+  /* Force vertical rectangle shape */
+  margin: 0 auto;
+  /* Center in grid cell */
+}
+
+.vf-svg-container {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.vf-card-container {
+  padding: 2px;
+  border-radius: 24px;
+  position: relative;
+  /* Replaced oklch with hex/rgba for compatibility */
+  background: linear-gradient(-30deg,
+      #6348dd,
+      transparent,
+      #6348dd),
+    linear-gradient(to bottom, #1a1a1a, #1a1a1a);
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  /* Ensure vertical height */
+}
+
+.vf-inner-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.vf-border-outer {
+  border: 2px solid rgba(72, 87, 221, 0.5);
+  border-radius: 24px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.vf-main-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  border: 2px solid #6348dd;
+  margin-top: -4px;
+  margin-left: -4px;
+  filter: url(#turbulent-displace);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.vf-glow-layer-1 {
+  border: 2px solid rgba(221, 132, 72, 0.6);
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  filter: blur(1px);
+}
+
+.vf-glow-layer-2 {
+  border: 2px solid #8a70f0;
+  /* Replaced oklch */
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  filter: blur(4px);
+}
+
+.vf-overlay-1,
+.vf-overlay-2 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: 24px;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg,
+      white,
+      transparent 30%,
+      transparent 70%,
+      white);
+  pointer-events: none;
+}
+
+.vf-overlay-1 {
+  opacity: 1;
+}
+
+.vf-overlay-2 {
+  opacity: 0.5;
+}
+
+.vf-background-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: 24px;
+  filter: blur(32px);
+  transform: scale(1.1);
+  opacity: 0.3;
+  z-index: -1;
+  background: linear-gradient(-30deg,
+      #8a70f0,
+      /* Replaced oklch */
+      transparent,
+      #6348dd);
+}
+
+.vf-content-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.vf-content-top {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  padding-bottom: 16px;
+  height: 100%;
+  align-items: center;
+}
+
+.vf-content-bottom {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  padding-top: 16px;
+}
+
+.vf-scrollbar-glass {
+  background: radial-gradient(47.2% 50% at 50.39% 88.37%,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.04);
+  position: relative;
+  transition: background 0.3s ease;
+  border-radius: 14px;
+  width: fit-content;
+  height: fit-content;
+  padding: 8px 16px;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16px;
+}
+
+.vf-scrollbar-glass:hover {
+  background: radial-gradient(47.2% 50% at 50.39% 88.37%,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0) 100%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.vf-scrollbar-glass::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1px;
+  background: linear-gradient(150deg,
+      rgba(255, 255, 255, 0.48) 16.73%,
+      rgba(255, 255, 255, 0.08) 30.2%,
+      rgba(255, 255, 255, 0.08) 68.2%,
+      rgba(255, 255, 255, 0.6) 81.89%);
+  border-radius: inherit;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.vf-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin-top: auto;
+  margin-bottom: auto;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.vf-description {
+  opacity: 0.8;
+  color: #fff;
+  font-size: 14px;
+}
+
+.vf-divider {
+  margin-top: auto;
+  border: none;
+  height: 1px;
+  background-color: currentColor;
+  opacity: 0.2;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black, transparent);
+  -webkit-mask-image: linear-gradient(to right,
+      transparent,
+      black,
+      transparent);
+}
+
+.luminous-card .content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Animation hover pour le logo de la navbar */
+/* Animation hover pour le logo de la navbar */
+.nav-logo-hover {
+  transition: all 0.3s ease;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.nav-logo-hover:hover {
+  background-color: #22C55E !important;
+  color: white !important;
+}
+
+.nav-logo-hover:hover span {
+  color: white !important;
+}
+
+/* Custom Menu CSS from User */
+#custom-menu {
+  position: relative;
+  z-index: 500;
+  height: 50px;
+  border-radius: 25px;
+  overflow: hidden;
+  background: #404040;
+  /* Default Grey */
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, .5);
+  transition: all .5s ease;
+  float: left;
+}
+
+/* Hover effect: Green (only when NOT open) */
+#custom-menu:not(:has(input:checked)):hover {
+  background: #73c71a;
+}
+
+/* Open state: Force Grey */
+#custom-menu:has(input:checked) {
+  background: #404040 !important;
+}
+
+#custom-menu>* {
+  float: left;
+}
+
+#menu-toggle {
+  display: block;
+  cursor: pointer;
+  opacity: 0;
+  z-index: 999;
+  margin: 0;
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#menu-toggle:checked~ul {
+  width: 150px;
+  background-position: 0px -50px;
+}
+
+#menu-toggle:checked~ul.admin-mode {
+  width: 200px;
+}
+
+#custom-menu ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0 0 0 50px;
+  height: 50px;
+  width: 0px;
+  transition: .5s width ease;
+  background-image: url("https://i.imgur.com/3d0vJzn.png");
+  background-repeat: no-repeat;
+  background-position: 0px 0px;
+  display: flex;
+  align-items: center;
+  box-sizing: content-box;
+  /* Fix for Tailwind border-box reset */
+}
+
+#custom-menu li {
+  display: inline-block;
+  line-height: 50px;
+  width: 50px;
+  text-align: center;
+  margin: 0;
+}
+
+#custom-menu li a {
+  font-size: 1.25em;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }

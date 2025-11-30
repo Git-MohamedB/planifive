@@ -1,0 +1,586 @@
+=== SIGN IN DEBUG 2025-11-29T16:39:24.899Z ===
+User: {
+  "id": "832321894543654973",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.6JeBSnAHr27pcsUcVMvThAgCEQih2a",
+  "expires_at": 1765039164,
+  "refresh_token": "p6Y8nB3jVlMubyOrG08eyZBXyccgEw",
+  "scope": "email identify"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-29T17:11:52.808Z ===
+User: {
+  "id": "cmijf4pmz0003i5q7aja856zc",
+  "name": "mohamed103912",
+  "email": "cloudforce93@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/embed/avatars/0.png",
+  "customName": ""
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "1285651582557491262",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.DXkj5Bxm0j0gipAUoqijuaabSfoDKz",
+  "expires_at": 1765041112,
+  "refresh_token": "CDYJigEwnhIfTVyWfibnWQBoU36yJM",
+  "scope": "identify email"
+}
+Profile: {
+  "id": "1285651582557491262",
+  "username": "mohamed103912",
+  "avatar": null,
+  "discriminator": "0",
+  "public_flags": 0,
+  "flags": 0,
+  "banner": null,
+  "accent_color": null,
+  "global_name": "Mohamed",
+  "avatar_decoration_data": null,
+  "collectibles": null,
+  "display_name_styles": null,
+  "banner_color": null,
+  "clan": null,
+  "primary_guild": null,
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "cloudforce93@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/embed/avatars/0.png"
+}
+=== SIGN IN DEBUG 2025-11-29T17:12:07.621Z ===
+User: {
+  "id": "cmijf4pmz0003i5q7aja856zc",
+  "name": "mohamed103912",
+  "email": "cloudforce93@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/embed/avatars/0.png",
+  "customName": ""
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "1285651582557491262",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.GmWrR7pocQ61aom9RRXazZMQoLH9J2",
+  "expires_at": 1765041127,
+  "refresh_token": "iSBhgOus5nff4LDEkCPi5NLUGlevBg",
+  "scope": "email identify"
+}
+Profile: {
+  "id": "1285651582557491262",
+  "username": "mohamed103912",
+  "avatar": null,
+  "discriminator": "0",
+  "public_flags": 0,
+  "flags": 0,
+  "banner": null,
+  "accent_color": null,
+  "global_name": "Mohamed",
+  "avatar_decoration_data": null,
+  "collectibles": null,
+  "display_name_styles": null,
+  "banner_color": null,
+  "clan": null,
+  "primary_guild": null,
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "cloudforce93@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/embed/avatars/0.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:15:46.086Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.zpXgLVDDPesXU8JdsZxPTc3gt7aFWa",
+  "expires_at": 1765106145,
+  "refresh_token": "2Dt8QamFAIwhZv9NQYgdFbs5JAZl6J",
+  "scope": "identify email"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:19:34.115Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.FGEJLIuvs7wStCQNlljGJW0s2DE0vZ",
+  "expires_at": 1765106373,
+  "refresh_token": "ZzDmilRwtw8s9fbNfESX7LsMKcobhY",
+  "scope": "identify email"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:20:14.476Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.zyGblFijuAjo8kSczboVWVHHQs6dqH",
+  "expires_at": 1765106414,
+  "refresh_token": "W9SLJ8QKDKBpWdzceLPnOShu6rUeW7",
+  "scope": "email identify"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:20:26.130Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.P5GOz29AHeyp31lLnBvYTfBLlThAe7",
+  "expires_at": 1765106425,
+  "refresh_token": "Pstwj71XtjZ6aX8H1mdHfhgiuQ2HU6",
+  "scope": "email identify"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:26:25.505Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.2RpV598JQ1rPvwebNDHo5mhQV03DIV",
+  "expires_at": 1765106785,
+  "refresh_token": "nSUtNBYaRfoOKCWjGJDyX6gv60LgXR",
+  "scope": "identify email"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:28:46.009Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.4IZPgtBAlV1e8X3TnpzULsXSPrGhtY",
+  "expires_at": 1765106925,
+  "refresh_token": "Ha0zlO3LaV2wO9habbVkT3fp4WXmwe",
+  "scope": "identify email"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}
+=== SIGN IN DEBUG 2025-11-30T11:31:03.777Z ===
+User: {
+  "id": "cmikinx7t0000n2r04odyte78",
+  "name": "sheizer_",
+  "email": "sheizeracc@gmail.com",
+  "emailVerified": null,
+  "image": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png",
+  "customName": null
+}
+Account: {
+  "provider": "discord",
+  "type": "oauth",
+  "providerAccountId": "832321894543654973",
+  "token_type": "Bearer",
+  "access_token": "MTQ0MDczOTA5ODcwODE1MjM1Mg.VCJbI8XT5vJXML9AQwZSpLorfNkc8F",
+  "expires_at": 1765107063,
+  "refresh_token": "g6ETvdSC1xZz2DCBaMEdJLLMlnOOyX",
+  "scope": "email identify"
+}
+Profile: {
+  "id": "832321894543654973",
+  "username": "sheizer_",
+  "avatar": "4510ed771894bf54dfe22b159a3d0a80",
+  "discriminator": "0",
+  "public_flags": 64,
+  "flags": 64,
+  "banner": null,
+  "accent_color": 0,
+  "global_name": "Sheizer",
+  "avatar_decoration_data": {
+    "asset": "a_670b722e56740d11d1e6fe55b8094013",
+    "sku_id": "1343751617303805983",
+    "expires_at": null
+  },
+  "collectibles": {
+    "nameplate": {
+      "sku_id": "1377377712028516443",
+      "asset": "nameplates/nameplates_v2/spirit_moon/",
+      "label": "COLLECTIBLES_NAMEPLATES_V2_SPIRIT_MOON_A11Y",
+      "palette": "violet"
+    }
+  },
+  "display_name_styles": null,
+  "banner_color": "#000000",
+  "clan": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "primary_guild": {
+    "identity_guild_id": "1044698006395555960",
+    "identity_enabled": true,
+    "tag": "STAR",
+    "badge": "66dd35e973cf6054f84b0edd73ac2b02"
+  },
+  "mfa_enabled": false,
+  "locale": "fr",
+  "premium_type": 0,
+  "email": "sheizeracc@gmail.com",
+  "verified": true,
+  "image_url": "https://cdn.discordapp.com/avatars/832321894543654973/4510ed771894bf54dfe22b159a3d0a80.png"
+}

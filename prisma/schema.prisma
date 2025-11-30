@@ -18,12 +18,12 @@ model Account {
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
+  refresh_token      String?
+  access_token       String?
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String?  @db.Text
+  id_token           String?
   session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -45,13 +45,36 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?   // Avatar Discord/Google
-  
+  customName    String?   // Prénom personnalisé défini par l'admin
+
   accounts      Account[]
   sessions      Session[]
-  
+
   // Nos relations personnalisées pour le Five
   availabilities Availability[]
   templates      AvailabilityTemplate[]
+
+  matchesTeam1 Match[] @relation("Team1")
+  matchesTeam2 Match[] @relation("Team2")
+  
+  calls        Call[]
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  date      DateTime
+  location  String?
+  scoreTeam1 Int     @default(0)
+  scoreTeam2 Int     @default(0)
+
+  // Noms des joueurs personnalisés (JSON)
+  team1Names String?
+  team2Names String?
+
+  team1     User[]   @relation("Team1")
+  team2     User[]   @relation("Team2")
+
+  createdAt DateTime @default(now())
 }
 
 model VerificationToken {
@@ -63,40 +86,67 @@ model VerificationToken {
 }
 
 // ==========================================
-// 3. Modèles pour le Five Planner
+// 3. Modèles pour le Planifive
 // ==========================================
 
 // Les disponibilités réelles (Liées à une date spécifique)
 model Availability {
   id        String   @id @default(cuid())
   userId    String
-  
+
   // On stocke la date sous format DateTime
-  date      DateTime 
-  
+  date      DateTime
+
   // On stocke l'heure (8 à 23)
-  hour      Int      
-  
+  hour      Int
+
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Index pour rendre les recherches ultra rapides
   @@index([date, hour])
+  @@unique([userId, date, hour])
 }
 
 // La "Semaine Type" (Pour la duplication intelligente)
 model AvailabilityTemplate {
   id        String   @id @default(cuid())
   userId    String
-  
+
   // 0 = Dimanche, 1 = Lundi, ..., 6 = Samedi
-  dayOfWeek Int      
-  
+  dayOfWeek Int
+
   hour      Int
-  
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Un user ne peut pas avoir deux templates pour le même créneau
   @@unique([userId, dayOfWeek, hour])
+}
+
+// ==========================================
+// 4. Modèles pour l'intégration Discord / Call
+// ==========================================
+
+model Call {
+  id        String   @id @default(cuid())
+  creatorId String
+  date      DateTime
+  hour      Int
+  location  String
+  duration  Int      @default(60) // 60 or 90 minutes
+  createdAt DateTime @default(now())
+
+  creator   User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model SlotStatus {
+  id           String   @id @default(cuid())
+  date         DateTime
+  hour         Int
+  isFullNotified Boolean @default(false)
+  isGoldenNotified Boolean @default(false)
+
+  @@unique([date, hour])
 }

@@ -246,7 +246,10 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
         }),
       });
 
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.details || errData.error || "Save failed");
+      }
 
       setUnsavedChanges(false);
       // Force refresh to confirm sync

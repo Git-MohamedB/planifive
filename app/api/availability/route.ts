@@ -249,6 +249,46 @@ export async function POST(req: Request) {
         checkSequence(hour)
       ]);
     }
-    return NextResponse.json({ status: "added" });
   }
+  return NextResponse.json({ status: "added" });
+}
+
+// --- PUT (Sync Range) ---
+export async function PUT(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
+
+  const { start, end, slots } = await req.json();
+  const userId = session.user.id;
+
+  if (!start || !end || !Array.isArray(slots)) {
+    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  // 1. Delete all existing slots for this user in the range
+  await prisma.availability.deleteMany({
+    where: {
+      userId: userId,
+      date: { gte: startDate, lte: endDate }
+    }
+  });
+
+  // 2. Insert new slots
+  if (slots.length > 0) {
+    // Prepare data for createMany
+    const data = slots.map((s: any) => ({
+      userId: userId,
+      date: new Date(s.date),
+      hour: s.hour
+    }));
+
+    await prisma.availability.createMany({
+      data: data
+    });
+  }
+
+  return NextResponse.json({ status: "synced", count: slots.length });
 }

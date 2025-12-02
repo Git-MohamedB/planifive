@@ -9,12 +9,14 @@ type SlotData = {
 };
 
 // --- GET ---
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
+  if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: "User introuvable" }, { status: 404 });
+  // Optimization: Use ID from session (JWT) instead of DB lookup
+  const userId = session.user.id;
 
   const allDispos = await prisma.availability.findMany({
     where: { date: { gte: new Date() } },
@@ -30,7 +32,7 @@ export async function GET() {
     if (!slotDetails[key]) slotDetails[key] = { users: [], count: 0 };
     slotDetails[key].count++;
     slotDetails[key].users.push({ id: dispo.user.id, name: dispo.user.name, image: dispo.user.image });
-    if (dispo.userId === user.id) mySlots.push(key);
+    if (dispo.userId === userId) mySlots.push(key);
   });
 
   return NextResponse.json({ mySlots, slotDetails });
@@ -39,17 +41,17 @@ export async function GET() {
 // --- POST (Toggle simple) ---
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) return NextResponse.json({ error: "401" }, { status: 401 });
+  if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
 
   const { date, hour } = await req.json();
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: "404" }, { status: 404 });
+  const userId = session.user.id;
+  const userName = session.user.name || "Un joueur";
 
   const targetDate = new Date(date);
   const MATCH_SIZE = 10;
 
   const existing = await prisma.availability.findFirst({
-    where: { userId: user.id, date: targetDate, hour: hour },
+    where: { userId: userId, date: targetDate, hour: hour },
   });
 
   if (existing) {
@@ -83,7 +85,7 @@ export async function POST(req: Request) {
         const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
         const embed = {
           title: "❌ DÉSISTEMENT SUR UN MATCH 3H !",
-          description: `${user.name || "Un joueur"} s'est désisté du créneau de ${hour}h, annulant la session de 3h (${startH}h - ${startH + 3}h).`,
+          description: `${userName} s'est désisté du créneau de ${hour}h, annulant la session de 3h (${startH}h - ${startH + 3}h).`,
           color: 0xEF4444, // Red
           fields: [
             { name: "📅 Date", value: dateStr, inline: true },
@@ -110,7 +112,7 @@ export async function POST(req: Request) {
   } else {
     // --- ADD ---
     await prisma.availability.create({
-      data: { userId: user.id, date: targetDate, hour: hour },
+      data: { userId: userId, date: targetDate, hour: hour },
     });
 
     // Check count

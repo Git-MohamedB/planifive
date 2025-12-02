@@ -54,6 +54,10 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   // Ref to track the timestamp of the last mutation to discard stale fetches
   const lastMutationTime = useRef(0);
 
+  // MANUAL SAVE MODE
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     fetchDispos();
     fetchCalls();
@@ -191,15 +195,10 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
 
         // STALE CHECK: If a mutation happened AFTER this fetch started, discard the result.
         if (!isMutating.current && lastMutationTime.current < fetchStartTime) {
-          // Merge with existing if needed, but for now replacing is safer to avoid stale deletions
-          // However, replacing might clear slots if we navigate far? 
-          // Actually, we only display the current week. 
-          // If we replace, we lose data for other weeks if we cached them?
-          // The state is `mySlots` (array of strings) and `slotDetails` (object).
-          // If we only fetch a range, we should probably MERGE or handle it carefully.
-          // BUT, simplicity first: If we only view one week, fetching that week + buffer is fine.
-          // If the user navigates far, we fetch again.
-          setMySlots(data.mySlots || []);
+          // Only update mySlots if NO unsaved changes
+          if (!unsavedChanges) {
+            setMySlots(data.mySlots || []);
+          }
           setSlotDetails(data.slotDetails || {});
         }
       }
@@ -214,6 +213,52 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
         setCalls(data);
       }
     } catch (error) { console.error(error); }
+  };
+
+  const saveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Calculate range for current view (Monday to Sunday)
+      const start = new Date(currentMonday);
+      const end = addDays(currentMonday, 6);
+
+      // 2. Filter mySlots to get only those in this range
+      const slotsToSave = [];
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(currentMonday, i);
+        const dateStr = formatDateLocal(date);
+        for (const hour of HOURS) {
+          const key = `${dateStr}-${hour}`;
+          if (mySlots.includes(key)) {
+            slotsToSave.push({ date: dateStr, hour });
+          }
+        }
+      }
+
+      // 3. Send PUT request
+      const res = await fetch("/api/availability", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start: formatDateLocal(start),
+          end: formatDateLocal(end),
+          slots: slotsToSave
+        }),
+      });
+
+      if (!res.ok) throw new Error("Save failed");
+
+      setUnsavedChanges(false);
+      // Force refresh to confirm sync
+      lastMutationTime.current = Date.now(); // Reset stale check
+      await fetchDispos();
+
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Erreur lors de la sauvegarde.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const applyDragSelection = async () => {
@@ -255,8 +300,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
     // Optimistic Update
     setMySlots(newSlots);
 
-    // Batch API Call
-    if (slotsToUpdate.length > 0) {
+    setUnsavedChanges(true);
+    // Batch API Call (Disabled for Manual Save)
+    if (false && slotsToUpdate.length > 0) {
       try {
         isMutating.current = true;
         lastMutationTime.current = Date.now();
@@ -307,22 +353,20 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
       return;
     }
 
-    // --- OPTIMISTIC UPDATE START ---
-    // 1. Update mySlots immediately
+    // --- OPTIMISTIC UPDATE ONLY ---
     setMySlots(prev => isSelected ? prev.filter(s => s !== key) : [...prev, key]);
+    setUnsavedChanges(true);
 
-    // 2. Update slotDetails immediately (count & users)
+    // Update slotDetails immediately for responsiveness
     setSlotDetails(prev => {
       const currentDetails = prev[key] || { users: [], count: 0 };
       let newUsers = [...currentDetails.users];
       let newCount = currentDetails.count;
 
       if (isSelected) {
-        // Removing
         newUsers = newUsers.filter(u => u.id !== session.user?.id);
         newCount = Math.max(0, newCount - 1);
       } else {
-        // Adding
         if (session.user && !newUsers.some(u => u.id === session.user?.id)) {
           newUsers.push({
             id: session.user.id,
@@ -332,42 +376,8 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
           newCount++;
         }
       }
-
-      return {
-        ...prev,
-        [key]: { users: newUsers, count: newCount }
-      };
+      return { ...prev, [key]: { users: newUsers, count: newCount } };
     });
-    // --- OPTIMISTIC UPDATE END ---
-
-    try {
-      isMutating.current = true;
-      lastMutationTime.current = Date.now();
-      const res = await fetch("/api/availability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: dateStr, hour }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Erreur serveur");
-      }
-
-      // We REMOVED fetchDispos() here to prevent rollback/flickering.
-      // The optimistic update above is enough.
-      // The background polling will eventually sync any external changes.
-    } catch (error) {
-      console.error("Error toggling slot:", error);
-      // Revert on error (optional but recommended for robust optimistic UI)
-      alert("Erreur lors de la sauvegarde. Veuillez réessayer.");
-      fetchDispos();
-    } finally {
-      // Small delay to ensure server has processed before we resume polling
-      setTimeout(() => {
-        isMutating.current = false;
-      }, 500);
-    }
   };
 
   const handleAction = async (action: "save" | "apply") => {
@@ -506,6 +516,27 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
             />
           </div>
         </div>
+
+        {/* FLOATING SAVE BUTTON */}
+        <AnimatePresence>
+          {unsavedChanges && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="absolute bottom-8 right-8 z-[2000]"
+            >
+              <button
+                onClick={saveChanges}
+                disabled={isSaving}
+                className="bg-[#1ED760] text-black font-bold px-6 py-3 rounded-full shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+              >
+                {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                <span>SAUVEGARDER ({mySlots.length})</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ZONE GRILLE */}
         <div className="flex-1 relative w-full h-full overflow-hidden bg-[#0F0F0F]">

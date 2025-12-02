@@ -172,11 +172,14 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   const fetchDispos = async () => {
     if (isMutating.current) return; // Skip polling if user is interacting
     try {
-      const res = await fetch("/api/availability");
+      const res = await fetch("/api/availability", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setMySlots(data.mySlots || []);
-        setSlotDetails(data.slotDetails || {});
+        // Double check mutation status after await
+        if (!isMutating.current) {
+          setMySlots(data.mySlots || []);
+          setSlotDetails(data.slotDetails || {});
+        }
       }
     } catch (error) { console.error(error); }
   };

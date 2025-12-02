@@ -518,25 +518,18 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
         </div>
 
         {/* FLOATING SAVE BUTTON */}
-        <AnimatePresence>
-          {unsavedChanges && (
-            <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="absolute bottom-8 right-8 z-[2000]"
+        {unsavedChanges && (
+          <div className="fixed bottom-8 right-8 z-[2000]">
+            <button
+              onClick={saveChanges}
+              disabled={isSaving}
+              className="bg-[#1ED760] text-black font-bold px-6 py-3 rounded-full shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
-              <button
-                onClick={saveChanges}
-                disabled={isSaving}
-                className="bg-[#1ED760] text-black font-bold px-6 py-3 rounded-full shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-              >
-                {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-                <span>SAUVEGARDER ({mySlots.length})</span>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+              <span>SAUVEGARDER ({mySlots.length})</span>
+            </button>
+          </div>
+        )}
 
         {/* ZONE GRILLE */}
         <div className="flex-1 relative w-full h-full overflow-hidden bg-[#0F0F0F]">

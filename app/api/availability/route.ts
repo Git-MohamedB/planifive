@@ -255,40 +255,49 @@ export async function POST(req: Request) {
 
 // --- PUT (Sync Range) ---
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
 
-  const { start, end, slots } = await req.json();
-  const userId = session.user.id;
+    const { start, end, slots } = await req.json();
+    const userId = session.user.id;
 
-  if (!start || !end || !Array.isArray(slots)) {
-    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
-  }
+    console.log(`[PUT] Syncing slots for ${userId} from ${start} to ${end}. Slots: ${slots?.length}`);
 
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-
-  // 1. Delete all existing slots for this user in the range
-  await prisma.availability.deleteMany({
-    where: {
-      userId: userId,
-      date: { gte: startDate, lte: endDate }
+    if (!start || !end || !Array.isArray(slots)) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
-  });
 
-  // 2. Insert new slots
-  if (slots.length > 0) {
-    // Prepare data for createMany
-    const data = slots.map((s: any) => ({
-      userId: userId,
-      date: new Date(s.date),
-      hour: s.hour
-    }));
+    const startDate = new Date(start);
+    const endDate = new Date(end);
 
-    await prisma.availability.createMany({
-      data: data
+    // 1. Delete all existing slots for this user in the range
+    const deleteResult = await prisma.availability.deleteMany({
+      where: {
+        userId: userId,
+        date: { gte: startDate, lte: endDate }
+      }
     });
-  }
+    console.log(`[PUT] Deleted ${deleteResult.count} existing slots.`);
 
-  return NextResponse.json({ status: "synced", count: slots.length });
+    // 2. Insert new slots
+    if (slots.length > 0) {
+      // Prepare data for createMany
+      const data = slots.map((s: any) => ({
+        userId: userId,
+        date: new Date(s.date),
+        hour: s.hour
+      }));
+
+      await prisma.availability.createMany({
+        data: data
+      });
+      console.log(`[PUT] Inserted ${data.length} new slots.`);
+    }
+
+    return NextResponse.json({ status: "synced", count: slots.length });
+  } catch (error) {
+    console.error("[PUT] Error syncing slots:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: String(error) }, { status: 500 });
+  }
 }

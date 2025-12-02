@@ -12,35 +12,32 @@ export const authOptions: NextAuthOptions = {
       allowDangerousEmailAccountLinking: true,
     }),
   ],
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   callbacks: {
     signIn: async ({ user, account, profile }) => {
-      // Basic check to ensure we have necessary data
       if (!user || !account) return false;
       return true;
     },
-    session: async ({ session, user, token }) => {
-      // Try to get data from token first (JWT strategy)
-      if (token) {
-        if (!session.user) session.user = {} as any;
-        session.user.id = token.sub!;
+    jwt: async ({ token, user, account, profile }) => {
+      // Initial sign in
+      if (user) {
+        token.id = user.id;
+        token.picture = user.image;
+        token.name = user.name;
+      }
+      return token;
+    },
+    session: async ({ session, token }) => {
+      if (session.user && token) {
+        session.user.id = token.id as string;
         session.user.name = token.name;
         session.user.image = token.picture;
         session.user.email = token.email;
       }
-      // Then try from user (database strategy)
-      else if (user) {
-        if (!session.user) session.user = {} as any;
-        session.user.id = user.id;
-        session.user.name = user.name;
-        session.user.image = user.image;
-        session.user.email = user.email;
-      }
-
       return session;
     },
-  },
-  session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 };

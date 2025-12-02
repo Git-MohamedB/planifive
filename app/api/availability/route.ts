@@ -46,14 +46,14 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "404" }, { status: 404 });
 
   const targetDate = new Date(date);
-  const MATCH_SIZE = 10; // Set to 10 as requested
+  const MATCH_SIZE = 10;
 
   const existing = await prisma.availability.findFirst({
     where: { userId: user.id, date: targetDate, hour: hour },
   });
 
   if (existing) {
-    // Deleting availability
+    // --- DELETE ---
     await prisma.availability.delete({ where: { id: existing.id } });
 
     // Check count AFTER deletion
@@ -63,135 +63,140 @@ export async function POST(req: Request) {
 
     // Only trigger cancellation if we dropped BELOW the limit
     if (newCount < MATCH_SIZE) {
-      // --- CHECK FOR BROKEN GOLDEN SLOT ---
-      console.log(`[DELETE] Count dropped to ${newCount} (Limit ${MATCH_SIZE}). Checking for broken golden slot...`);
-      const potentialStarts = [hour - 2, hour - 1, hour];
+      // Check for broken golden slot (range: hour-2 to hour)
+      // We only care if a golden slot WAS notified starting at these hours
+      const potentialStarts = [hour - 2, hour - 1, hour].filter(h => h >= 8 && h <= 21);
 
-      for (const startH of potentialStarts) {
-        if (startH < 8 || startH > 21) continue;
-
-        const status = await prisma.slotStatus.findUnique({
-          where: { date_hour: { date: targetDate, hour: startH } },
-        });
-
-        if (status?.isGoldenNotified) {
-          console.log(`[DELETE] Broken Golden Slot found starting at ${startH}h`);
-
-          const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
-          const embed = {
-            title: "❌ DÉSISTEMENT SUR UN MATCH 3H !",
-            description: `${user.name || "Un joueur"} s'est désisté du créneau de ${hour}h, annulant la session de 3h (${startH}h - ${startH + 3}h).`,
-            color: 0xEF4444, // Red
-            fields: [
-              { name: "📅 Date", value: dateStr, inline: true },
-              { name: "⏰ Session impactée", value: `${startH}h - ${startH + 3}h`, inline: true },
-              { name: "📉 Action", value: "Le statut confirmé a été révoqué.", inline: false },
-              { name: "🔗 Remonter l'équipe", value: "[Clique ici](https://five-planner.vercel.app/)" }
-            ],
-            footer: { text: "Planifive • Désistement" },
-            timestamp: new Date().toISOString(),
-          };
-
-          const { sendDiscordWebhook } = await import("../../../lib/discord");
-          await sendDiscordWebhook(embed);
-
-          // Reset the golden notification status
-          await prisma.slotStatus.update({
-            where: { date_hour: { date: targetDate, hour: startH } },
-            data: { isGoldenNotified: false }
-          });
+      // Single query to find active notifications in this range
+      const activeNotifications = await prisma.slotStatus.findMany({
+        where: {
+          date: targetDate,
+          hour: { in: potentialStarts },
+          isGoldenNotified: true
         }
+      });
+
+      for (const status of activeNotifications) {
+        const startH = status.hour;
+        console.log(`[DELETE] Broken Golden Slot found starting at ${startH}h`);
+
+        const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
+        const embed = {
+          title: "❌ DÉSISTEMENT SUR UN MATCH 3H !",
+          description: `${user.name || "Un joueur"} s'est désisté du créneau de ${hour}h, annulant la session de 3h (${startH}h - ${startH + 3}h).`,
+          color: 0xEF4444, // Red
+          fields: [
+            { name: "📅 Date", value: dateStr, inline: true },
+            { name: "⏰ Session impactée", value: `${startH}h - ${startH + 3}h`, inline: true },
+            { name: "📉 Action", value: "Le statut confirmé a été révoqué.", inline: false },
+            { name: "🔗 Remonter l'équipe", value: "[Clique ici](https://five-planner.vercel.app/)" }
+          ],
+          footer: { text: "Planifive • Désistement" },
+          timestamp: new Date().toISOString(),
+        };
+
+        // Fire and forget webhook (catch error to not block)
+        import("../../../lib/discord").then(mod => mod.sendDiscordWebhook(embed)).catch(console.error);
+
+        // Reset the golden notification status
+        await prisma.slotStatus.update({
+          where: { date_hour: { date: targetDate, hour: startH } },
+          data: { isGoldenNotified: false }
+        });
       }
     }
 
     return NextResponse.json({ status: "removed" });
   } else {
-    // Adding availability
+    // --- ADD ---
     await prisma.availability.create({
       data: { userId: user.id, date: targetDate, hour: hour },
     });
 
-    // --- CHECK FULL FIVE ---
+    // Check count
     const count = await prisma.availability.count({
       where: { date: targetDate, hour: hour },
     });
 
     if (count >= MATCH_SIZE) {
-      // 1. Single Slot Notification -> DISABLED as per user request
-      /*
-      const status = await prisma.slotStatus.findUnique({
-        where: { date_hour: { date: targetDate, hour: hour } },
+      // Check Golden Slot (3 Consecutive Slots)
+      // We need to check range [hour-2, hour+2] to see if we formed a sequence of 3
+      const rangeStart = hour - 2;
+      const rangeEnd = hour + 2;
+
+      // Single query for all relevant slots
+      const relevantSlots = await prisma.availability.findMany({
+        where: {
+          date: targetDate,
+          hour: { gte: rangeStart, lte: rangeEnd }
+        },
+        select: { hour: true, user: { select: { name: true } } }
       });
 
-      if (!status?.isFullNotified) {
-         ...
-      }
-      */
+      // Group by hour
+      const slotsMap = new Map<number, string[]>();
+      for (let h = rangeStart; h <= rangeEnd; h++) slotsMap.set(h, []);
 
-      // 2. Check Golden Slot (3 Consecutive Slots)
-      const hoursToCheck = [hour - 2, hour - 1, hour, hour + 1, hour + 2];
-      const slotsData = await Promise.all(hoursToCheck.map(async (h) => {
-        if (h < 8 || h > 23) return { count: 0, users: [] };
-        const users = await prisma.availability.findMany({
-          where: { date: targetDate, hour: h },
-          include: { user: true }
-        });
-        return { count: users.length, users: users.map(u => u.user.name || "Inconnu") };
-      }));
+      relevantSlots.forEach(s => {
+        if (slotsMap.has(s.hour)) slotsMap.get(s.hour)?.push(s.user.name || "Inconnu");
+      });
 
-      // Check for sequence of 3
-      let goldenStartHour = -1;
-      let goldenPlayers: string[] = [];
+      // Helper to check sequence
+      const checkSequence = async (startH: number) => {
+        if (startH < 8 || startH > 21) return;
+        const c1 = slotsMap.get(startH)?.length || 0;
+        const c2 = slotsMap.get(startH + 1)?.length || 0;
+        const c3 = slotsMap.get(startH + 2)?.length || 0;
 
-      if (slotsData[0].count >= MATCH_SIZE && slotsData[1].count >= MATCH_SIZE && slotsData[2].count >= MATCH_SIZE) {
-        goldenStartHour = hour - 2;
-        const allPlayers = [...slotsData[0].users, ...slotsData[1].users, ...slotsData[2].users];
-        goldenPlayers = Array.from(new Set(allPlayers));
-      }
-      else if (slotsData[1].count >= MATCH_SIZE && slotsData[2].count >= MATCH_SIZE && slotsData[3].count >= MATCH_SIZE) {
-        goldenStartHour = hour - 1;
-        const allPlayers = [...slotsData[1].users, ...slotsData[2].users, ...slotsData[3].users];
-        goldenPlayers = Array.from(new Set(allPlayers));
-      }
-      else if (slotsData[2].count >= MATCH_SIZE && slotsData[3].count >= MATCH_SIZE && slotsData[4].count >= MATCH_SIZE) {
-        goldenStartHour = hour;
-        const allPlayers = [...slotsData[2].users, ...slotsData[3].users, ...slotsData[4].users];
-        goldenPlayers = Array.from(new Set(allPlayers));
-      }
-
-      if (goldenStartHour !== -1) {
-        const goldenStatus = await prisma.slotStatus.findUnique({
-          where: { date_hour: { date: targetDate, hour: goldenStartHour } },
-        });
-
-        if (!goldenStatus?.isGoldenNotified) {
-          const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
-          const playersList = goldenPlayers.map(p => `• ${p}`).join("\n");
-
-          const embed = {
-            title: "🏆 MATCH 3H CONFIRMÉ !",
-            description: `Incroyable ! 3 créneaux consécutifs sont complets (${goldenStartHour}h - ${goldenStartHour + 3}h) !`,
-            color: 0xFACC15, // Gold
-            fields: [
-              { name: "📅 Date", value: dateStr, inline: true },
-              { name: "⏰ Créneaux", value: `${goldenStartHour}h - ${goldenStartHour + 1}h - ${goldenStartHour + 2}h`, inline: true },
-              { name: "⚽ Joueurs présents", value: playersList || "Aucun joueur trouvé", inline: false },
-              { name: "🔗 Rejoindre", value: "[Clique ici](https://five-planner.vercel.app/)" }
-            ],
-            footer: { text: "Planifive • Golden Session" },
-            timestamp: new Date().toISOString(),
-          };
-
-          const { sendDiscordWebhook } = await import("../../../lib/discord");
-          await sendDiscordWebhook(embed);
-
-          await prisma.slotStatus.upsert({
-            where: { date_hour: { date: targetDate, hour: goldenStartHour } },
-            update: { isGoldenNotified: true },
-            create: { date: targetDate, hour: goldenStartHour, isGoldenNotified: true },
+        if (c1 >= MATCH_SIZE && c2 >= MATCH_SIZE && c3 >= MATCH_SIZE) {
+          // Found a golden slot! Check if already notified
+          const goldenStatus = await prisma.slotStatus.findUnique({
+            where: { date_hour: { date: targetDate, hour: startH } },
           });
+
+          if (!goldenStatus?.isGoldenNotified) {
+            const allPlayers = [
+              ...(slotsMap.get(startH) || []),
+              ...(slotsMap.get(startH + 1) || []),
+              ...(slotsMap.get(startH + 2) || [])
+            ];
+            const uniquePlayers = Array.from(new Set(allPlayers));
+            const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
+            const playersList = uniquePlayers.map(p => `• ${p}`).join("\n");
+
+            const embed = {
+              title: "🏆 MATCH 3H CONFIRMÉ !",
+              description: `Incroyable ! 3 créneaux consécutifs sont complets (${startH}h - ${startH + 3}h) !`,
+              color: 0xFACC15, // Gold
+              fields: [
+                { name: "📅 Date", value: dateStr, inline: true },
+                { name: "⏰ Créneaux", value: `${startH}h - ${startH + 1}h - ${startH + 2}h`, inline: true },
+                { name: "⚽ Joueurs présents", value: playersList || "Aucun joueur trouvé", inline: false },
+                { name: "🔗 Rejoindre", value: "[Clique ici](https://five-planner.vercel.app/)" }
+              ],
+              footer: { text: "Planifive • Golden Session" },
+              timestamp: new Date().toISOString(),
+            };
+
+            // Fire and forget
+            import("../../../lib/discord").then(mod => mod.sendDiscordWebhook(embed)).catch(console.error);
+
+            await prisma.slotStatus.upsert({
+              where: { date_hour: { date: targetDate, hour: startH } },
+              update: { isGoldenNotified: true },
+              create: { date: targetDate, hour: startH, isGoldenNotified: true },
+            });
+          }
         }
-      }
+      };
+
+      // Check possible start times for a sequence involving 'hour'
+      // Sequence can start at: hour-2, hour-1, or hour
+      await Promise.all([
+        checkSequence(hour - 2),
+        checkSequence(hour - 1),
+        checkSequence(hour)
+      ]);
     }
 
     return NextResponse.json({ status: "added" });

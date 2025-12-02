@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { ChevronLeft, ChevronRight, Save, Copy, Loader2, Calendar, Megaphone, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
@@ -48,6 +48,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<"save" | "apply" | "deleteCall" | null>(null);
   const [callToDelete, setCallToDelete] = useState<string | null>(null);
+
+  // Ref to track if we are currently mutating data (to pause polling)
+  const isMutating = useRef(false);
 
   useEffect(() => {
     fetchDispos();
@@ -167,6 +170,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   }, [isDragging, dragStart, dragEnd]);
 
   const fetchDispos = async () => {
+    if (isMutating.current) return; // Skip polling if user is interacting
     try {
       const res = await fetch("/api/availability");
       if (res.ok) {
@@ -290,6 +294,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
     // --- OPTIMISTIC UPDATE END ---
 
     try {
+      isMutating.current = true;
       await fetch("/api/availability", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -302,6 +307,11 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
       console.error("Error toggling slot:", error);
       // Revert on error (optional but recommended for robust optimistic UI)
       fetchDispos();
+    } finally {
+      // Small delay to ensure server has processed before we resume polling
+      setTimeout(() => {
+        isMutating.current = false;
+      }, 500);
     }
   };
 

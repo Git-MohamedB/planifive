@@ -388,7 +388,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
     const callOnSlot = calls.find(c =>
       new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
       c.hour <= hour &&
-      hour < c.hour + (c.duration === 90 ? 4 : 3)
+      hour < c.hour + (c.duration === 90 ? 5 : 4)
     );
 
     const isCreator = callOnSlot?.creatorId === session?.user?.id;
@@ -514,11 +514,21 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   };
   const isGoldenSlot = (dStr: string, h: number) => {
     if (!checkFull(dStr, h)) return false;
-    const prev1 = checkFull(dStr, h - 1);
-    const prev2 = checkFull(dStr, h - 2);
-    const next1 = checkFull(dStr, h + 1);
-    const next2 = checkFull(dStr, h + 2);
-    return ((prev2 && prev1) || (prev1 && next1) || (next1 && next2));
+    // Check for 4 consecutive slots (current slot is h)
+    // Possible positions for h in a sequence of 4: 1st, 2nd, 3rd, 4th
+    const p3 = checkFull(dStr, h - 3);
+    const p2 = checkFull(dStr, h - 2);
+    const p1 = checkFull(dStr, h - 1);
+    const n1 = checkFull(dStr, h + 1);
+    const n2 = checkFull(dStr, h + 2);
+    const n3 = checkFull(dStr, h + 3);
+
+    return (
+      (p3 && p2 && p1) || // h is 4th
+      (p2 && p1 && n1) || // h is 3rd
+      (p1 && n1 && n2) || // h is 2nd
+      (n1 && n2 && n3)    // h is 1st
+    );
   };
 
   const slideVariants = {
@@ -631,7 +641,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                         (c) =>
                           new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
                           hour >= c.hour &&
-                          hour < c.hour + (c.duration === 90 ? 4 : 3)
+                          hour < c.hour + (c.duration === 90 ? 5 : 4)
                       );
 
                       // Dynamic Styles

@@ -20,8 +20,8 @@ export async function POST(req: Request) {
     }
 
     try {
-        // Logic: 1h -> 3 slots (h, h+1, h+2) | 1h30 -> 4 slots (h, h+1, h+2, h+3)
-        const slotsCount = duration === 90 ? 4 : 3;
+        // Logic: 1h -> 4 slots (h, h+1, h+2, h+3) | 1h30 -> 5 slots (h, h+1, h+2, h+3, h+4)
+        const slotsCount = duration === 90 ? 5 : 4;
         const slots = Array.from({ length: slotsCount }, (_, i) => parseInt(hour) + i);
 
         // 1. Create Call in DB

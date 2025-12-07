@@ -153,7 +153,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
                               justifyContent: 'space-between',
                               alignItems: 'center'
                             }}>
-                              <span>{dateStr} ({dayName}) • {slot.hour}h-{slot.hour + 3}h</span>
+                              <span>{dateStr} ({dayName}) • {slot.hour}h-{slot.hour + 4}h</span>
                               <span style={{ background: countBg, color: 'black', padding: '1px 4px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold' }}>
                                 {slot.count}
                               </span>

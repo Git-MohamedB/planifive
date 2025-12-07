@@ -530,7 +530,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   console.log("🟣 Rendering PlanningGrid - modalOpen:", modalOpen, "pendingAction:", pendingAction);
 
   return (
-    <>
+    <div className="relative w-full h-full">
       <div className="w-full h-full bg-[#121212] rounded-[32px] border border-[#222] flex flex-col overflow-hidden shadow-2xl relative select-none">
 
         {/* HEADER GRILLE */}
@@ -565,9 +565,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
           </div>
         </div>
 
-        {/* FLOATING SAVE BUTTON */}
+        {/* FLOATING SAVE BUTTON - Absolute positioning relative to container */}
         {unsavedChanges && (
-          <div className="fixed top-[74px] right-8 z-[2000]">
+          <div className="absolute -top-12 right-0 z-[2000]">
             <button
               onClick={saveChanges}
               disabled={isSaving}
@@ -705,7 +705,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                                 <div className="flex justify-between items-center border-b border-[#333] pb-2">
                                   <div className="flex items-center gap-2">
                                     <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">JOUEURS</span>
-                                    {/* User requested to remove the call button when people are present */}
+                                    {/* User requested to remove the call button when people present */}
                                   </div>
                                   {isGold ? (
                                     <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest animate-pulse">MATCH 3H</span>
@@ -792,9 +792,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
               ? "Voulez-vous sauvegarder cette semaine comme modèle de référence ?"
               : "Voulez-vous appliquer le modèle sauvegardé à cette semaine ?"
         }
-        type={pendingAction === "deleteCall" ? "danger" : (pendingAction || "save")}
+        type={pendingAction === "deleteCall" ? "danger" : (pendingAction === "apply" ? "apply" : "save")}
       />
-    </>
+    </div>
   );
 }
 

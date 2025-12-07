@@ -66,7 +66,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
-              <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>Matchs 4h</span>
+              <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>Créneaux 4h</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Trophy size={13} color="#EAB308" />
                 <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{goldenSlots.length}</span>

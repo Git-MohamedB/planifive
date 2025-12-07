@@ -114,9 +114,9 @@ export async function POST(req: Request) {
 
     // Only trigger cancellation if we dropped BELOW the limit
     if (newCount < MATCH_SIZE) {
-      // Check for broken golden slot (range: hour-2 to hour)
+      // Check for broken golden slot (range: hour-3 to hour)
       // We only care if a golden slot WAS notified starting at these hours
-      const potentialStarts = [hour - 2, hour - 1, hour].filter(h => h >= 8 && h <= 21);
+      const potentialStarts = [hour - 3, hour - 2, hour - 1, hour].filter(h => h >= 8 && h <= 21);
 
       // Single query to find active notifications in this range
       const activeNotifications = await prisma.slotStatus.findMany({
@@ -133,12 +133,12 @@ export async function POST(req: Request) {
 
         const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
         const embed = {
-          title: "❌ DÉSISTEMENT SUR UN MATCH 3H !",
-          description: `${userName} s'est désisté du créneau de ${hour}h, annulant la session de 3h (${startH}h - ${startH + 3}h).`,
+          title: "❌ DÉSISTEMENT SUR UN CRÉNEAU 4H !",
+          description: `${userName} s'est désisté du créneau de ${hour}h, annulant la session de 4h (${startH}h - ${startH + 4}h).`,
           color: 0xEF4444, // Red
           fields: [
             { name: "📅 Date", value: dateStr, inline: true },
-            { name: "⏰ Session impactée", value: `${startH}h - ${startH + 3}h`, inline: true },
+            { name: "⏰ Session impactée", value: `${startH}h - ${startH + 4}h`, inline: true },
             { name: "📉 Action", value: "Le statut confirmé a été révoqué.", inline: false },
             { name: "🔗 Remonter l'équipe", value: "[Clique ici](https://planifive.vercel.app/)" }
           ],
@@ -170,10 +170,10 @@ export async function POST(req: Request) {
     });
 
     if (count >= MATCH_SIZE) {
-      // Check Golden Slot (3 Consecutive Slots)
-      // We need to check range [hour-2, hour+2] to see if we formed a sequence of 3
-      const rangeStart = hour - 2;
-      const rangeEnd = hour + 2;
+      // Check Golden Slot (4 Consecutive Slots)
+      // We need to check range [hour-3, hour+3] to see if we formed a sequence of 4
+      const rangeStart = hour - 3;
+      const rangeEnd = hour + 3;
 
       // Single query for all relevant slots
       const relevantSlots = await prisma.availability.findMany({
@@ -198,8 +198,9 @@ export async function POST(req: Request) {
         const c1 = slotsMap.get(startH)?.length || 0;
         const c2 = slotsMap.get(startH + 1)?.length || 0;
         const c3 = slotsMap.get(startH + 2)?.length || 0;
+        const c4 = slotsMap.get(startH + 3)?.length || 0;
 
-        if (c1 >= MATCH_SIZE && c2 >= MATCH_SIZE && c3 >= MATCH_SIZE) {
+        if (c1 >= MATCH_SIZE && c2 >= MATCH_SIZE && c3 >= MATCH_SIZE && c4 >= MATCH_SIZE) {
           // Found a golden slot! Check if already notified
           const goldenStatus = await prisma.slotStatus.findUnique({
             where: { date_hour: { date: targetDate, hour: startH } },
@@ -209,19 +210,20 @@ export async function POST(req: Request) {
             const allPlayers = [
               ...(slotsMap.get(startH) || []),
               ...(slotsMap.get(startH + 1) || []),
-              ...(slotsMap.get(startH + 2) || [])
+              ...(slotsMap.get(startH + 2) || []),
+              ...(slotsMap.get(startH + 3) || [])
             ];
             const uniquePlayers = Array.from(new Set(allPlayers));
             const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
             const playersList = uniquePlayers.map(p => `• ${p}`).join("\n");
 
             const embed = {
-              title: "🏆 MATCH 3H CONFIRMÉ !",
-              description: `Incroyable ! 3 créneaux consécutifs sont complets (${startH}h - ${startH + 3}h) !`,
+              title: "🏆 CRÉNEAU 4H CONFIRMÉ !",
+              description: `Incroyable ! 4 créneaux consécutifs sont complets (${startH}h - ${startH + 4}h) !`,
               color: 0xFACC15, // Gold
               fields: [
                 { name: "📅 Date", value: dateStr, inline: true },
-                { name: "⏰ Créneaux", value: `${startH}h - ${startH + 1}h - ${startH + 2}h`, inline: true },
+                { name: "⏰ Créneaux", value: `${startH}h - ${startH + 1}h - ${startH + 2}h - ${startH + 3}h`, inline: true },
                 { name: "⚽ Joueurs présents", value: playersList || "Aucun joueur trouvé", inline: false },
                 { name: "🔗 Rejoindre", value: "[Clique ici](https://planifive.vercel.app/)" }
               ],

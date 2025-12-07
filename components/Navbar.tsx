@@ -66,7 +66,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
-              <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>Matchs 3h</span>
+              <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>Matchs 4h</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Trophy size={13} color="#EAB308" />
                 <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{goldenSlots.length}</span>
@@ -91,7 +91,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
                   {/* Golden Slots Section */}
                   {goldenSlots.length > 0 && (
                     <>
-                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Créneaux validés (3h)</div>
+                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Créneaux validés (4h)</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {goldenSlots.map((slot, idx) => (
                           <div key={idx} style={{
@@ -103,7 +103,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
                             borderRadius: '4px',
                             border: '1px solid #2A2A2A'
                           }}>
-                            {slot.day} • {slot.hour}h-{slot.hour + 3}h
+                            {slot.day} • {slot.hour}h-{slot.hour + 4}h
                           </div>
                         ))}
                       </div>
@@ -118,7 +118,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
                   {/* Best Potential Slot Section */}
                   {potentialSlots && potentialSlots.length > 0 && (
                     <>
-                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Potentiels 3h (En cours)</div>
+                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Potentiels 4h (En cours)</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {potentialSlots.map((slot, idx) => {
                           const dateStr = slot.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });

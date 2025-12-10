@@ -658,21 +658,11 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                       // PRIORITY: Active Call > Selection > Golden > Full
                       if (activeCall) {
                         bgClass = "call-active-slot";
-                        // If selected AND active call, we might want to show it's selected,
-                        // but user specifically wants the Blue effect ("le vert se superpose").
-                        // So we prioritize Blue. We can keep z-index high.
-                        cellStyle.zIndex = 20;
-                        // We do NOT apply the Green background or Green shadow here.
-                        // The CSS class .call-active-slot handles the blue look.
-
+                        // Use CSS variable logic for background
                         if (isSelected) {
-                          // Optional: Add a subtle green text or border indicator if needed,
-                          // but for now, we strictly follow "Don't let green overlap blue".
-                          // We can add a specialized border or just leave it Blue.
-                          extraClasses += " border-2 border-[#5865F2]";
-                        } else {
-                          extraClasses += " border border-[#5865F2]";
+                          extraClasses += " selected";
                         }
+                        // Note: We do NOT set cellStyle.zIndex here because the CSS class handles it (z-index: 10 or 20).
 
                       } else if (isSelected) {
                         // FORCE GREEN via inline style only if NOT active call

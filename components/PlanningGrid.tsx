@@ -655,27 +655,37 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                       // We use inline styles for the background to ensure it overrides everything
                       const cellStyle: React.CSSProperties = {};
 
-                      if (isSelected) {
-                        // FORCE GREEN via inline style
+                      // PRIORITY: Active Call > Selection > Golden > Full
+                      if (activeCall) {
+                        bgClass = "call-active-slot";
+                        // If selected AND active call, we might want to show it's selected,
+                        // but user specifically wants the Blue effect ("le vert se superpose").
+                        // So we prioritize Blue. We can keep z-index high.
+                        cellStyle.zIndex = 20;
+                        // We do NOT apply the Green background or Green shadow here.
+                        // The CSS class .call-active-slot handles the blue look.
+
+                        if (isSelected) {
+                          // Optional: Add a subtle green text or border indicator if needed,
+                          // but for now, we strictly follow "Don't let green overlap blue".
+                          // We can add a specialized border or just leave it Blue.
+                          extraClasses += " border-2 border-[#5865F2]";
+                        } else {
+                          extraClasses += " border border-[#5865F2]";
+                        }
+
+                      } else if (isSelected) {
+                        // FORCE GREEN via inline style only if NOT active call
                         cellStyle.backgroundColor = '#22c55e'; // green-500
                         cellStyle.zIndex = 10; // Ensure it's on top
-                        cellStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)'; // Reduced Green glow
+                        cellStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
                       } else if (isGold) {
                         bgClass = "bg-yellow-500/20 border-yellow-500/50";
                       } else if (isFull) {
                         bgClass = "bg-red-500/20";
-                      } else if (activeCall) {
-                        bgClass = "call-active-slot";
                       }
 
-                      // Extra classes logic
-                      if (activeCall) {
-                        // The call-active-slot class handles the border and glow animations
-                        // We might want to keep the selected state distinctive though
-                        if (isSelected) {
-                          extraClasses += " border-2 border-[#5865F2]";
-                        }
-                      } else if (!isSelected && !isGold && !isFull) {
+                      if (!activeCall && !isSelected && !isGold && !isFull) {
                         extraClasses += " hover:bg-[#252525]";
                       } return (
                         <div

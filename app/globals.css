@@ -420,55 +420,69 @@ a {
   animation: goldenShimmer 3s ease-in-out infinite;
 }
 
-/* ===== CALL ACTIVE SLOT ANIMATION (HOUDINI) ===== */
-@property --gradient-angle {
-  syntax: "<angle>";
-  initial-value: 90deg;
-  inherits: false;
-}
-
-@keyframes rotate {
+/* ===== CALL ACTIVE SLOT ANIMATION (BLUE GLOW) ===== */
+@keyframes borderSpin {
   0% {
-    --gradient-angle: 0deg;
+    transform: rotate(0deg);
   }
 
   100% {
-    --gradient-angle: 360deg;
+    transform: rotate(360deg);
   }
 }
 
 .call-active-slot {
   position: relative;
   background-color: rgba(88, 101, 242, 0.15) !important;
-  z-index: 20 !important;
-  /* Ensure it stays on top for the glow */
+  /* Tinted background */
+  box-shadow: 0 0 15px rgba(88, 101, 242, 0.4) inset;
+  /* Inner glow */
+  overflow: hidden;
+  /* Needed for the pseudo-element 'tour' effect */
+  z-index: 1;
 }
 
-.call-active-slot::after,
+/* The rotating border effect */
 .call-active-slot::before {
-  content: " ";
+  content: '';
   position: absolute;
-  z-index: -1;
-  inset: -2px;
-  /* Thicker border */
-  background: conic-gradient(from var(--gradient-angle),
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: conic-gradient(transparent,
+      transparent,
+      transparent,
       #5865F2,
-      /* Discord Blue */
       #00C7FF,
-      /* Cyan */
-      #5865F2,
-      #00C7FF,
+      /* Light Blue/Cyan highlight */
       #5865F2);
-  /* Use inherit only if parent has radius, otherwise 0 */
-  border-radius: inherit;
-  animation: rotate 2.5s linear infinite;
+  animation: borderSpin 4s linear infinite;
+  z-index: -1;
+  pointer-events: none;
 }
 
-/* Glow Effect */
+/* Mask to create the thin border line */
 .call-active-slot::after {
-  filter: blur(1rem);
-  /* Strong glow */
-  opacity: 0.7;
+  content: '';
+  position: absolute;
+  inset: 2px;
+  /* Border thickness */
+  background: #1A1A1A;
+  /* Match slot background (or slightly lighter) */
+  z-index: -1;
+  border-radius: inherit;
+  /* If slots have radius */
+}
+
+/* Hover state enhancement */
+.call-active-slot:hover {
+  box-shadow: 0 0 25px rgba(88, 101, 242, 0.6) inset;
+}
+
+.call-active-slot:hover::before {
+  animation-duration: 2s;
+  /* Faster spin on hover */
 }
 
 

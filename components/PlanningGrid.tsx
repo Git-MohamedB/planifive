@@ -653,7 +653,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                       let extraClasses = "";
 
                       // We use inline styles for the background to ensure it overrides everything
-                      const cellStyle: React.CSSProperties = {};
+                      const innerStyle: React.CSSProperties = {};
 
                       // PRIORITY: Active Call > Selection > Golden > Full
                       if (activeCall) {
@@ -661,12 +661,13 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                         if (isSelected) {
                           bgClass += " selected";
                         }
+                        // z-index handled by class
 
                       } else if (isSelected) {
-                        // FORCE GREEN via inline style only if NOT active call
-                        cellStyle.backgroundColor = '#22c55e'; // green-500
-                        cellStyle.zIndex = 10; // Ensure it's on top
-                        cellStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
+                        // FORCE GREEN via bgClass on inner div
+                        bgClass = "bg-[#22c55e]";
+                        innerStyle.zIndex = 10;
+                        innerStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
                       } else if (isGold) {
                         bgClass = "bg-yellow-500/20 border-yellow-500/50";
                       } else if (isFull) {
@@ -681,11 +682,10 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                           onMouseDown={() => onMouseDown(i, hour)}
                           onMouseEnter={() => onMouseEnter(i, hour)}
                           onClick={() => toggleSlot(dateStr, hour)}
-                          style={cellStyle}
                           className={`relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center ${extraClasses} group-hover:z-50`}
                         >
                           {/* VISUAL LAYER (Background / Active Call Effect) - Decoupled to avoid clipping tooltip */}
-                          <div className={`absolute inset-0 ${bgClass} pointer-events-none`}></div>
+                          <div className={`absolute inset-0 ${bgClass} pointer-events-none`} style={innerStyle}></div>
 
                           {count > 0 && (
                             <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-20">

@@ -849,7 +849,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
             fetchDispos();
           }}
         />
-      </>
+      </div>
       );
 }
 

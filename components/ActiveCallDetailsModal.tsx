@@ -152,20 +152,23 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 }}>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                <MapPin size={20} className="text-white" />
-                                {call.location}
-                            </h2>
-                            <div className="flex items-center gap-10 text-gray-400 text-xs uppercase tracking-wider font-medium">
-                                <div className="flex items-center gap-2">
-                                    <Clock size={14} />
+                            {/* Top Line: Date/Time + Creator */}
+                            <div className="flex items-center gap-4 text-gray-400 text-[10px] uppercase tracking-wider font-bold mb-1">
+                                <div className="flex items-center gap-1.5">
+                                    <Clock size={12} />
                                     <span>{call.hour}H - {call.hour + (call.duration === 90 ? 5 : 4)}H00</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <UserIcon size={14} />
+                                <div className="flex items-center gap-1.5">
+                                    <UserIcon size={12} />
                                     <span>PAR {call.creator?.name || "???"}</span>
                                 </div>
                             </div>
+
+                            {/* Second Line: Location */}
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <MapPin size={20} className="text-white" />
+                                {call.location}
+                            </h2>
                         </div>
                         <div className="flex items-center gap-2">
                             {session?.user?.id === call?.creatorId && (
@@ -207,8 +210,8 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
                         <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.accepted.map((u: any, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors group">
-                                    <div className="w-3 h-3 rounded-full bg-gray-800 overflow-hidden shrink-0 ring-1 ring-[#333]">
+                                <div key={idx} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors group">
+                                    <div className="w-2 h-2 rounded-full bg-gray-800 overflow-hidden shrink-0 ring-1 ring-[#333]">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-400 group-hover:text-gray-200 text-xs font-medium truncate flex-1 transition-colors">
@@ -239,8 +242,8 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
                         <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.declined.map((u: any, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors opacity-50 hover:opacity-100 group">
-                                    <div className="w-3 h-3 rounded-full bg-gray-800 overflow-hidden shrink-0 grayscale ring-1 ring-[#333]">
+                                <div key={idx} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors opacity-50 hover:opacity-100 group">
+                                    <div className="w-2 h-2 rounded-full bg-gray-800 overflow-hidden shrink-0 grayscale ring-1 ring-[#333]">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-500 group-hover:text-gray-400 text-xs font-medium line-through decoration-red-900 truncate">
@@ -258,11 +261,11 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 </div>
 
                 {/* Footer: Actions */}
-                <div className="p-8 pt-6 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-between gap-4 items-center px-16">
+                <div className="p-8 pt-6 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center gap-3 items-center">
                     <button
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
-                        className={`w-32 py-2 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
+                        className={`w-36 py-3 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
                             ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-default opacity-80"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)]"
                             }`}
@@ -274,7 +277,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     <button
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
-                        className={`w-32 py-2 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
+                        className={`w-36 py-3 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
                             ? "bg-[#2e1313] text-red-500 border border-red-900/50 cursor-default opacity-80"
                             : "bg-red-600 text-white hover:bg-red-700 border border-transparent shadow-[0_0_20px_rgba(220,38,38,0.4)]"
                             }`}

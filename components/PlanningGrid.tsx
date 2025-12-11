@@ -605,261 +605,291 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
         </div>
 
         {/* ZONE GRILLE */}
-        <div className="flex-1 relative w-full h-full overflow-hidden bg-[#0F0F0F]">
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={currentMonday.toISOString()}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="absolute inset-0 w-full h-full"
+        {/* Debug State Changes */}
+  useEffect(() => {
+          console.log("👉 STATE CHANGE: detailsModalOpen =", detailsModalOpen, "Selected:", selectedActiveCall?.id);
+  }, [detailsModalOpen, selectedActiveCall]);
+
+        return (
+        <div className="flex flex-col select-none relative h-full">
+          {/* DEBUG HUD */}
+          <div className="bg-yellow-100 text-black p-2 border-b-4 border-yellow-500 z-[99999] flex gap-4 items-center">
+            <span className="font-bold">DEBUG V3:</span>
+            <span>Calls: {calls.length}</span>
+            <span>ModalOpen: {detailsModalOpen ? "TRUE" : "FALSE"}</span>
+            <span>ID: {selectedActiveCall?.id || "NULL"}</span>
+            <button
+              className="bg-blue-600 text-white px-3 py-1 rounded font-bold"
+              onClick={() => {
+                const c = calls.length > 0 ? calls[0] : null;
+                setSelectedActiveCall(c);
+                setDetailsModalOpen(true);
+              }}
             >
-              <div className="w-full h-full grid grid-cols-[60px_repeat(7,1fr)] grid-rows-[50px_repeat(16,minmax(0,0.9fr))] divide-x divide-y divide-[#222]">
-                <div className="bg-[#141414]"></div>
+              FORCE OPEN
+            </button>
+            <button
+              className="bg-gray-600 text-white px-3 py-1 rounded"
+              onClick={() => fetchCalls()}
+            >
+              REFRESH CALLS
+            </button>
+          </div>
+          <div className="flex-1 relative w-full h-full overflow-hidden bg-[#0F0F0F]">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={currentMonday.toISOString()}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="absolute inset-0 w-full h-full"
+              >
+                <div className="w-full h-full grid grid-cols-[60px_repeat(7,1fr)] grid-rows-[50px_repeat(16,minmax(0,0.9fr))] divide-x divide-y divide-[#222]">
+                  <div className="bg-[#141414]"></div>
 
-                {/* En-têtes Jours */}
-                {DAYS.map((day, i) => {
-                  const date = addDays(currentMonday, i);
-                  const isToday = new Date().toDateString() === date.toDateString();
-                  return (
-                    <div key={day} className={`flex flex-col items-center justify-center ${isToday ? 'bg-[#1C1C1C]' : 'bg-[#141414]'}`}>
-                      <span className={`text-[10px] font-bold tracking-widest mb-1 ${isToday ? 'text-[#1ED760]' : 'text-gray-500'}`}>{day}</span>
-                      <span className={`text-lg font-bold ${isToday ? 'text-white' : 'text-gray-400'}`}>{date.getDate()}</span>
-                    </div>
-                  );
-                })}
+                  {/* En-têtes Jours */}
+                  {DAYS.map((day, i) => {
+                    const date = addDays(currentMonday, i);
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    return (
+                      <div key={day} className={`flex flex-col items-center justify-center ${isToday ? 'bg-[#1C1C1C]' : 'bg-[#141414]'}`}>
+                        <span className={`text-[10px] font-bold tracking-widest mb-1 ${isToday ? 'text-[#1ED760]' : 'text-gray-500'}`}>{day}</span>
+                        <span className={`text-lg font-bold ${isToday ? 'text-white' : 'text-gray-400'}`}>{date.getDate()}</span>
+                      </div>
+                    );
+                  })}
 
-                {/* Corps */}
-                {HOURS.map((hour) => (
-                  <Fragment key={hour}>
-                    <div className="bg-[#141414] flex items-center justify-center text-[11px] font-mono text-gray-600 font-medium select-none pointer-events-none">{hour}h</div>
+                  {/* Corps */}
+                  {HOURS.map((hour) => (
+                    <Fragment key={hour}>
+                      <div className="bg-[#141414] flex items-center justify-center text-[11px] font-mono text-gray-600 font-medium select-none pointer-events-none">{hour}h</div>
 
-                    {DAYS.map((_, i) => {
-                      const date = addDays(currentMonday, i);
-                      const dateStr = formatDateLocal(date);
-                      const key = `${dateStr}-${hour}`;
+                      {DAYS.map((_, i) => {
+                        const date = addDays(currentMonday, i);
+                        const dateStr = formatDateLocal(date);
+                        const key = `${dateStr}-${hour}`;
 
-                      const isSelectedReal = mySlots.includes(key);
-                      const isDragZone = isInDragZone(i, hour);
-                      const isSelected = isDragZone ? !isSelectedReal : isSelectedReal;
+                        const isSelectedReal = mySlots.includes(key);
+                        const isDragZone = isInDragZone(i, hour);
+                        const isSelected = isDragZone ? !isSelectedReal : isSelectedReal;
 
-                      const details = slotDetails[key] || { users: [], count: 0 };
-                      const count = details.count;
-                      const isFull = count >= MATCH_SIZE;
-                      const isGold = isGoldenSlot(dateStr, hour);
+                        const details = slotDetails[key] || { users: [], count: 0 };
+                        const count = details.count;
+                        const isFull = count >= MATCH_SIZE;
+                        const isGold = isGoldenSlot(dateStr, hour);
 
-                      // Check for active call
-                      const activeCall = calls.find(
-                        (c) =>
-                          new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
-                          hour >= c.hour &&
-                          hour < c.hour + (c.duration === 90 ? 5 : 4)
-                      );
+                        // Check for active call
+                        const activeCall = calls.find(
+                          (c) =>
+                            new Date(c.date).toDateString() === new Date(dateStr).toDateString() &&
+                            hour >= c.hour &&
+                            hour < c.hour + (c.duration === 90 ? 5 : 4)
+                        );
 
-                      // Dynamic Styles
-                      let parentClasses = `relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center group-hover:z-50`;
-                      const parentStyle: React.CSSProperties = {};
+                        // Dynamic Styles
+                        let parentClasses = `relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center group-hover:z-50`;
+                        const parentStyle: React.CSSProperties = {};
 
-                      // PRIORITY: Active Call > Selection > Golden > Full
-                      if (activeCall) {
-                        // Logic handled in Render with Explicit DOM layers
-                        // We leave parent style empty/default.
+                        // PRIORITY: Active Call > Selection > Golden > Full
+                        if (activeCall) {
+                          // Logic handled in Render with Explicit DOM layers
+                          // We leave parent style empty/default.
 
-                      } else if (isSelected) {
-                        // Standard Selection: Use robust inline style on PARENT
-                        parentStyle.backgroundColor = '#22c55e'; // green-500
-                        parentStyle.zIndex = 10;
-                        parentStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
-                      } else if (isGold) {
-                        parentClasses += " bg-yellow-500/20 border-yellow-500/50";
-                      } else if (isFull) {
-                        parentClasses += " bg-red-500/20";
-                      } else {
-                        // Default state: Dark background with hover effect
-                        parentClasses += " bg-[#1A1A1A] hover:bg-[#252525]";
-                      }
+                        } else if (isSelected) {
+                          // Standard Selection: Use robust inline style on PARENT
+                          parentStyle.backgroundColor = '#22c55e'; // green-500
+                          parentStyle.zIndex = 10;
+                          parentStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
+                        } else if (isGold) {
+                          parentClasses += " bg-yellow-500/20 border-yellow-500/50";
+                        } else if (isFull) {
+                          parentClasses += " bg-red-500/20";
+                        } else {
+                          // Default state: Dark background with hover effect
+                          parentClasses += " bg-[#1A1A1A] hover:bg-[#252525]";
+                        }
 
-                      return (
-                        <div
-                          key={key}
-                          onMouseDown={() => !activeCall && onMouseDown(i, hour)}
-                          onMouseEnter={() => onMouseEnter(i, hour)}
-                          onClick={() => toggleSlot(dateStr, hour)}
-                          style={parentStyle}
-                          className={parentClasses}
-                        >
-                          {/* VISUAL LAYER (Active Call Only) - EXPLICIT LAYERS */}
-                          {activeCall && <ActiveCallVisual isSelected={isSelected} />}
+                        return (
+                          <div
+                            key={key}
+                            onMouseDown={() => !activeCall && onMouseDown(i, hour)}
+                            onMouseEnter={() => onMouseEnter(i, hour)}
+                            onClick={() => toggleSlot(dateStr, hour)}
+                            style={parentStyle}
+                            className={parentClasses}
+                          >
+                            {/* VISUAL LAYER (Active Call Only) - EXPLICIT LAYERS */}
+                            {activeCall && <ActiveCallVisual isSelected={isSelected} />}
 
-                          {count > 0 && (
-                            <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-50">
-                              <span className={`text-sm font-bold ${isSelected || isGold ? 'text-black' : (isFull ? 'text-red-500' : (activeCall ? 'text-[#5865F2]' : 'text-white'))}`}>
-                                {count}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* TOOLTIP - Conditional Positioning */}
-                          {!isDragging && (
-                            <div
-                              className={`absolute z-[1000] bottom-full pb-2 hidden group-hover:block pointer-events-auto ${i === 0 ? "left-full ml-2" : "right-full mr-2"
-                                }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="bg-[#1A1A1A] border border-[#333] p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] min-w-[220px] flex flex-col gap-3 backdrop-blur-sm relative">
-                                <div className="flex justify-between items-center border-b border-[#333] pb-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">JOUEURS</span>
-                                    {/* User requested to remove the call button when people present */}
-                                  </div>
-                                  {isGold ? (
-                                    <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest animate-pulse">Matchs 4H</span>
-                                  ) : activeCall ? (
-                                    <span className="text-[9px] font-black text-[#5865F2] uppercase tracking-widest flex items-center gap-1">
-                                      <Megaphone size={10} /> APPEL EN COURS
-                                    </span>
-                                  ) : (
-                                    <span className={`text-[10px] font-black ${isFull ? 'text-red-500' : 'text-[#1ED760]'}`}>
-                                      {count}/{MATCH_SIZE}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {activeCall && (
-                                  <div className="bg-[#5865F2]/10 p-2 rounded border border-[#5865F2]/30 text-xs text-gray-300 mb-2 relative group/call">
-                                    <div className="font-bold text-[#5865F2] mb-1">📍 {activeCall.location}</div>
-                                    <div>Appel lancé par {activeCall.creator.name}</div>
-
-
-                                  </div>
-                                )}
-
-                                <div className="flex flex-col gap-2">
-                                  {details.users.map((u, idx) => (
-                                    <div key={idx} className="flex items-center gap-8">
-                                      <img
-                                        src={u.image || ""}
-                                        className="w-0.5 h-0.5 rounded-full bg-black object-cover flex-shrink-0"
-                                        alt="u"
-                                        style={{ width: '50px', height: '50px' }}
-                                      />
-                                      <span className="text-[14px] text-gray-300 font-bold truncate ml-16">{u.name}</span>
-                                    </div>
-                                  ))}
-
-                                  {details.users.length === 0 && !activeCall && (
-                                    <div className="text-xs text-gray-600 italic text-center py-2">Aucun joueur</div>
-                                  )}
-                                </div>
+                            {count > 0 && (
+                              <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-50">
+                                <span className={`text-sm font-bold ${isSelected || isGold ? 'text-black' : (isFull ? 'text-red-500' : (activeCall ? 'text-[#5865F2]' : 'text-white'))}`}>
+                                  {count}
+                                </span>
                               </div>
-                              {/* Arrow pointing to the slot */}
-                              <div className={`w-3 h-3 bg-[#1A1A1A] border-t border-[#333] rotate-45 absolute bottom-4 ${i === 0 ? "left-[-7px] border-l" : "right-[-7px] border-r"
-                                }`}></div>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Call Action in Tooltip (or Context Menu) */}
-                          {/* We use the same tooltip for simplicity, but we add a button if no call exists */}
-                          {!activeCall && !isGold && count < MATCH_SIZE && (
-                            <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col gap-2 pointer-events-auto">
-                              {/* Existing tooltip content is above, we might need to merge them or just add the button to the existing tooltip */}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </Fragment>
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
+                            {/* TOOLTIP - Conditional Positioning */}
+                            {!isDragging && (
+                              <div
+                                className={`absolute z-[1000] bottom-full pb-2 hidden group-hover:block pointer-events-auto ${i === 0 ? "left-full ml-2" : "right-full mr-2"
+                                  }`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="bg-[#1A1A1A] border border-[#333] p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] min-w-[220px] flex flex-col gap-3 backdrop-blur-sm relative">
+                                  <div className="flex justify-between items-center border-b border-[#333] pb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">JOUEURS</span>
+                                      {/* User requested to remove the call button when people present */}
+                                    </div>
+                                    {isGold ? (
+                                      <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest animate-pulse">Matchs 4H</span>
+                                    ) : activeCall ? (
+                                      <span className="text-[9px] font-black text-[#5865F2] uppercase tracking-widest flex items-center gap-1">
+                                        <Megaphone size={10} /> APPEL EN COURS
+                                      </span>
+                                    ) : (
+                                      <span className={`text-[10px] font-black ${isFull ? 'text-red-500' : 'text-[#1ED760]'}`}>
+                                        {count}/{MATCH_SIZE}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {activeCall && (
+                                    <div className="bg-[#5865F2]/10 p-2 rounded border border-[#5865F2]/30 text-xs text-gray-300 mb-2 relative group/call">
+                                      <div className="font-bold text-[#5865F2] mb-1">📍 {activeCall.location}</div>
+                                      <div>Appel lancé par {activeCall.creator.name}</div>
+
+
+                                    </div>
+                                  )}
+
+                                  <div className="flex flex-col gap-2">
+                                    {details.users.map((u, idx) => (
+                                      <div key={idx} className="flex items-center gap-8">
+                                        <img
+                                          src={u.image || ""}
+                                          className="w-0.5 h-0.5 rounded-full bg-black object-cover flex-shrink-0"
+                                          alt="u"
+                                          style={{ width: '50px', height: '50px' }}
+                                        />
+                                        <span className="text-[14px] text-gray-300 font-bold truncate ml-16">{u.name}</span>
+                                      </div>
+                                    ))}
+
+                                    {details.users.length === 0 && !activeCall && (
+                                      <div className="text-xs text-gray-600 italic text-center py-2">Aucun joueur</div>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Arrow pointing to the slot */}
+                                <div className={`w-3 h-3 bg-[#1A1A1A] border-t border-[#333] rotate-45 absolute bottom-4 ${i === 0 ? "left-[-7px] border-l" : "right-[-7px] border-r"
+                                  }`}></div>
+                              </div>
+                            )}
+
+                            {/* Call Action in Tooltip (or Context Menu) */}
+                            {/* We use the same tooltip for simplicity, but we add a button if no call exists */}
+                            {!activeCall && !isGold && count < MATCH_SIZE && (
+                              <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col gap-2 pointer-events-auto">
+                                {/* Existing tooltip content is above, we might need to merge them or just add the button to the existing tooltip */}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
 
-      {/* Modal de confirmation */}
-      <ConfirmModal
-        isOpen={modalOpen}
-        onClose={() => {
-          console.log("🔴 Modal fermé");
-          setModalOpen(false);
-          setPendingAction(null);
-          setCallToDelete(null);
-        }}
-        onConfirm={executeAction}
-        title={
-          pendingAction === "deleteCall" ? "Supprimer l'appel ?" :
-            pendingAction === "save" ? "Sauvegarder le Modèle" : "Appliquer le Modèle"
-        }
-        message={
-          pendingAction === "deleteCall"
-            ? "Êtes-vous sûr de vouloir supprimer votre appel ? Cela désinscrira tous les participants."
-            : pendingAction === "save"
-              ? "Voulez-vous sauvegarder cette semaine comme modèle de référence ?"
-              : "Voulez-vous appliquer le modèle sauvegardé à cette semaine ?"
-        }
-        type={pendingAction === "deleteCall" ? "danger" : (pendingAction === "apply" ? "apply" : "save")}
-      />
+        {/* Modal de confirmation */}
+        <ConfirmModal
+          isOpen={modalOpen}
+          onClose={() => {
+            console.log("🔴 Modal fermé");
+            setModalOpen(false);
+            setPendingAction(null);
+            setCallToDelete(null);
+          }}
+          onConfirm={executeAction}
+          title={
+            pendingAction === "deleteCall" ? "Supprimer l'appel ?" :
+              pendingAction === "save" ? "Sauvegarder le Modèle" : "Appliquer le Modèle"
+          }
+          message={
+            pendingAction === "deleteCall"
+              ? "Êtes-vous sûr de vouloir supprimer votre appel ? Cela désinscrira tous les participants."
+              : pendingAction === "save"
+                ? "Voulez-vous sauvegarder cette semaine comme modèle de référence ?"
+                : "Voulez-vous appliquer le modèle sauvegardé à cette semaine ?"
+          }
+          type={pendingAction === "deleteCall" ? "danger" : (pendingAction === "apply" ? "apply" : "save")}
+        />
 
-      {detailsModalOpen && (
-        <div className="fixed top-0 left-0 bg-red-600 text-white z-[9999999] p-4 font-bold border-4 border-yellow-400">
-          DEBUG: STATE IS OPEN for call {selectedActiveCall?.id}
-        </div>
-      )}
+        {detailsModalOpen && (
+          <div className="fixed top-0 left-0 bg-red-600 text-white z-[9999999] p-4 font-bold border-4 border-yellow-400">
+            DEBUG: STATE IS OPEN for call {selectedActiveCall?.id}
+          </div>
+        )}
 
-      <ActiveCallDetailsModal
-        isOpen={detailsModalOpen}
-        onClose={() => setDetailsModalOpen(false)}
-        call={selectedActiveCall}
-        onResponseUpdate={() => {
-          fetchCalls();
-          fetchDispos();
-        }}
-      />
-    </>
-  );
+        <ActiveCallDetailsModal
+          isOpen={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+          call={selectedActiveCall}
+          onResponseUpdate={() => {
+            fetchCalls();
+            fetchDispos();
+          }}
+        />
+      </>
+      );
 }
 
-function ActionButton({ onClick, loading, label, icon, green = false, className = "" }: any) {
+      function ActionButton({onClick, loading, label, icon, green = false, className = ""}: any) {
   return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      className={`
+      <button
+        onClick={onClick}
+        disabled={loading}
+        className={`
         flex items-center gap-2 px-4 font-bold text-xs uppercase tracking-wider transition-all duration-300 hover:scale-105 h-full border-none outline-none ring-0 rounded-full
         ${green
-          ? 'bg-gradient-to-r from-[#22C55E] to-[#16a34a] text-black shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:from-[#16a34a] hover:to-[#15803d] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-          : 'bg-gradient-to-br from-[#181818] to-[#2a2a2a] text-gray-300 hover:from-[#2a2a2a] hover:to-[#404040] hover:text-white hover:shadow-lg'}
+            ? 'bg-gradient-to-r from-[#22C55E] to-[#16a34a] text-black shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:from-[#16a34a] hover:to-[#15803d] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+            : 'bg-gradient-to-br from-[#181818] to-[#2a2a2a] text-gray-300 hover:from-[#2a2a2a] hover:to-[#404040] hover:text-white hover:shadow-lg'}
         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none
         ${className}
       `}
-    >
-      {loading ? <Loader2 className="animate-spin" size={14} /> : icon}
-      <span>{label}</span>
-    </button>
-  );
+      >
+        {loading ? <Loader2 className="animate-spin" size={14} /> : icon}
+        <span>{label}</span>
+      </button>
+      );
 }
 
-function getMonday(d: Date) {
+      function getMonday(d: Date) {
   const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  const monday = new Date(date.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+      const monday = new Date(date.setDate(diff));
+      monday.setHours(0, 0, 0, 0);
+      return monday;
 }
 
-function addDays(date: Date, days: number) {
+      function addDays(date: Date, days: number) {
   const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
+      result.setDate(result.getDate() + days);
+      return result;
 }
 
-function formatDateLocal(date: Date) {
+      function formatDateLocal(date: Date) {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
 }

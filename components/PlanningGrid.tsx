@@ -649,43 +649,44 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                       );
 
                       // Dynamic Styles
-                      let bgClass = "bg-[#1A1A1A]"; // Default dark
-                      let extraClasses = "";
-
-                      // We use inline styles for the background to ensure it overrides everything
-                      const innerStyle: React.CSSProperties = {};
+                      let innerBgClass = ""; // For the Active Call visual layer
+                      let parentClasses = `relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center group-hover:z-50`;
+                      const parentStyle: React.CSSProperties = {};
 
                       // PRIORITY: Active Call > Selection > Golden > Full
                       if (activeCall) {
-                        bgClass = "call-active-slot";
+                        // Active Call uses the decoupled inner div for valid layering
+                        innerBgClass = "call-active-slot";
                         if (isSelected) {
-                          bgClass += " selected";
+                          innerBgClass += " selected";
                         }
-                        // z-index handled by class
+                        // We leave parent style empty/default, the inner div covers it.
 
                       } else if (isSelected) {
-                        // FORCE GREEN via inline style on inner div (more robust than class)
-                        innerStyle.backgroundColor = '#22c55e'; // green-500
-                        innerStyle.zIndex = 10;
-                        innerStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
+                        // Standard Selection: Use robust inline style on PARENT
+                        parentStyle.backgroundColor = '#22c55e'; // green-500
+                        parentStyle.zIndex = 10;
+                        parentStyle.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.2), 0 0 10px rgba(34, 197, 94, 0.4)';
                       } else if (isGold) {
-                        bgClass = "bg-yellow-500/20 border-yellow-500/50";
+                        parentClasses += " bg-yellow-500/20 border-yellow-500/50";
                       } else if (isFull) {
-                        bgClass = "bg-red-500/20";
+                        parentClasses += " bg-red-500/20";
+                      } else {
+                        // Default state: Dark background with hover effect
+                        parentClasses += " bg-[#1A1A1A] hover:bg-[#252525]";
                       }
 
-                      if (!activeCall && !isSelected && !isGold && !isFull) {
-                        extraClasses += " hover:bg-[#252525]";
-                      } return (
+                      return (
                         <div
                           key={key}
                           onMouseDown={() => onMouseDown(i, hour)}
                           onMouseEnter={() => onMouseEnter(i, hour)}
                           onClick={() => toggleSlot(dateStr, hour)}
-                          className={`relative group transition-all duration-200 border-b border-r border-[#222] cursor-pointer flex flex-col items-center justify-center ${extraClasses} group-hover:z-50`}
+                          style={parentStyle}
+                          className={parentClasses}
                         >
-                          {/* VISUAL LAYER (Background / Active Call Effect) - Decoupled to avoid clipping tooltip */}
-                          <div className={`absolute inset-0 ${bgClass} pointer-events-none`} style={innerStyle}></div>
+                          {/* VISUAL LAYER (Active Call Only) */}
+                          {activeCall && <div className={`absolute inset-0 ${innerBgClass} pointer-events-none`}></div>}
 
                           {count > 0 && (
                             <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-20">

@@ -14,6 +14,7 @@ interface ActiveCallDetailsModalProps {
 }
 
 export default function ActiveCallDetailsModal({ isOpen, onClose, call, onResponseUpdate, implicitAttendees = [] }: ActiveCallDetailsModalProps) {
+    if (isOpen) console.log("🟣 [MODAL] Render ActiveCallDetailsModal. IsOpen:", isOpen, "Call:", call?.id);
     const { data: session } = useSession();
     const [loading, setLoading] = useState(false);
     const [responses, setResponses] = useState<{ accepted: any[], declined: any[] }>({ accepted: [], declined: [] });

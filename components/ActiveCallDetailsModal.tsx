@@ -91,39 +91,9 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 body: JSON.stringify({ callId: call.id, status })
             });
 
-            // 2. If Accepted, AUTO-FILL slots
-            if (status === "ACCEPTED" && res.ok) {
-                // Ensure we use the exact date string YYYY-MM-DD regardless of timezone shifts
-                // call.date is usually an ISO string from DB.
-                // We want to lock it to the "day" it represents.
-                // Best way: Create Date from ISO, then use UTC methods if stored as UTC, OR use string manipulation if it's "YYYY-MM-DD..."
-                // Assuming call.date comes from Prisma DateTime (ISO).
-                // Let's rely on simple string split if available, or safe date.
-                const d = new Date(call.date);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const dateStr = `${year}-${month}-${day}`;
-
-                const slotsToUpdate = [];
-                // Assume 4h duration
-                // Assuming call.hour is integer (e.g., 20)
-                const startHour = typeof call.hour === 'number' ? call.hour : parseInt(call.hour);
-
-                for (let h = startHour; h < startHour + 4; h++) {
-                    slotsToUpdate.push({ date: dateStr, hour: h });
-                }
-
-                await fetch("/api/availability", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ slots: slotsToUpdate }),
-                });
-            }
-
             if (res.ok) {
-                await fetchResponses(); // Refresh local list
-                if (onResponseUpdate) onResponseUpdate(); // Refresh parent grid
+                await fetchResponses();
+                if (onResponseUpdate) onResponseUpdate();
             }
         } catch (e) { console.error(e); }
         setLoading(false);

@@ -41,11 +41,14 @@ export async function POST(req: Request) {
             });
 
             if (call) {
-                const hoursToAdd = [call.hour];
-                if (call.duration > 60) {
-                    // Logic: 90 mins -> covers hour and hour+1
-                    // Example: 20h (90min) -> 20h and 21h are occupied
-                    hoursToAdd.push(call.hour + 1);
+                const hoursToAdd = [];
+                const duration = call.duration || 60;
+                // Logic: 60 min -> 4 slots (h, h+1, h+2, h+3)
+                // Logic: 90 min -> 5 slots (h, h+1, h+2, h+3, h+4)
+                const slotsCount = duration === 90 ? 5 : 4;
+
+                for (let i = 0; i < slotsCount; i++) {
+                    hoursToAdd.push(call.hour + i);
                 }
 
                 const availabilityPromises = hoursToAdd.map(h => {

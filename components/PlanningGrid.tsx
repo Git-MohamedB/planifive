@@ -815,15 +815,19 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
             const d = new Date(selectedActiveCall.date);
             const dateKey = formatDateLocal(d);
             const startH = selectedActiveCall.hour;
-            // Assuming 4h duration as standard
-            const endH = startH + 4;
+
+            // Logic: 60 min -> 4 slots, 90 min -> 5 slots
+            const duration = selectedActiveCall.duration || 60;
+            const slotsCount = duration === 90 ? 5 : 4;
+            const endH = startH + slotsCount;
+
             const lists: any[][] = [];
             for (let h = startH; h < endH; h++) {
               const key = `${dateKey}-${h}`;
               if (slotDetails[key]?.users) {
                 lists.push(slotDetails[key].users);
               } else {
-                // If a slot is missing data (nobody there), then nobody conforms to "all 4 slots"
+                // If a slot is missing data (nobody there), then nobody conforms to "all slots"
                 return [];
               }
             }

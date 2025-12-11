@@ -8,7 +8,7 @@ const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
     return (
         <>
             {/* Layer 1: Rotating Gradient (The Border) */}
-            <div className="absolute top-0 left-0 w-full h-full z-0 overflow-hidden rounded-[inherit]">
+            <div className="absolute top-0 left-0 w-full h-full z-0 overflow-hidden rounded-[inherit] pointer-events-none">
                 <div
                     className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_3s_linear_infinite]"
                     style={{

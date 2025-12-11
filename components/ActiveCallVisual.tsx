@@ -18,7 +18,12 @@ const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
 
             {/* Layer 1: Background Color */}
             <div
-                className={`absolute inset-0 z-1 transition-colors duration-200 ${isSelected ? '!bg-[#22c55e]' : 'bg-[#1A1A1A]'}`}
+                className="absolute inset-0 z-1 transition-colors duration-200"
+                style={{
+                    backgroundColor: isSelected ? '#22c55e' : '#1A1A1A',
+                    border: isSelected ? '2px solid #22c55e' : 'none',
+                    opacity: 1
+                }}
             />
 
             {/* Layer 2: Animated SVG Border */}

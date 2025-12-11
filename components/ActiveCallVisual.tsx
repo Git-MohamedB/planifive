@@ -4,7 +4,7 @@ interface ActiveCallVisualProps {
     isSelected: boolean;
 }
 
-const ActiveCallVisual = React.memo(({ isSelected }: ActiveCallVisualProps) => {
+const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
     return (
         <>
             {/* Layer 1: Background Color */}
@@ -29,8 +29,6 @@ const ActiveCallVisual = React.memo(({ isSelected }: ActiveCallVisualProps) => {
             </svg>
         </>
     );
-});
-
-ActiveCallVisual.displayName = 'ActiveCallVisual';
+};
 
 export default ActiveCallVisual;

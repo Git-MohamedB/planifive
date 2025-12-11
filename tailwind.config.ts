@@ -80,7 +80,7 @@ const config: Config = {
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         'dash': {
-          'to': { strokeDashoffset: '-50' },
+          'to': { 'stroke-dashoffset': '-50px' },
         },
       },
       fontFamily: {

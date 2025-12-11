@@ -9,7 +9,7 @@ const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
         <>
             {/* Layer 1: Background Color */}
             <div
-                className="absolute inset-0 z-0 transition-colors duration-200"
+                className="absolute inset-0 z-1 transition-colors duration-200"
                 style={{ backgroundColor: isSelected ? '#22c55e' : '#1A1A1A' }}
             />
 

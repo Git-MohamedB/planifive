@@ -212,7 +212,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.accepted.map((u: any, idx) => (
                                 <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
-                                    <div className="w-5 h-5 rounded-full bg-gray-700 overflow-hidden shrink-0">
+                                    <div className="w-4 h-4 rounded-full bg-gray-700 overflow-hidden shrink-0">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-300 text-sm font-medium truncate flex-1">
@@ -247,7 +247,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.declined.map((u: any, idx) => (
                                 <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors opacity-60">
-                                    <div className="w-5 h-5 rounded-full bg-gray-700 overflow-hidden shrink-0 grayscale">
+                                    <div className="w-4 h-4 rounded-full bg-gray-700 overflow-hidden shrink-0 grayscale">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-400 text-sm font-medium line-through decoration-red-500/50 truncate">

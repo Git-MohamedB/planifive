@@ -20,10 +20,15 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
     // Fetch responses when modal opens
     useEffect(() => {
+        console.log("MODAL EFFECT", { isOpen, callId: call?.id });
         if (isOpen && call?.id) {
             fetchResponses();
         }
     }, [isOpen, call]);
+
+    console.log("MODAL RENDER", { isOpen, hasCall: !!call });
+
+    if (!call) return null;
 
     const fetchResponses = async () => {
         try {

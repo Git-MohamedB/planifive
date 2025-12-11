@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Check, XCircle, MapPin, Clock, User as UserIcon, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
+import { createPortal } from "react-dom";
 
 interface ActiveCallDetailsModalProps {
     isOpen: boolean;
@@ -100,141 +101,197 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
         setLoading(false);
     };
 
-    return (
-        isOpen ? (
+    // Use Portal to ensure it sits on top of everything
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
+    if (!isOpen || !call || !mounted) return null;
+    if (typeof window === 'undefined') return null;
+
+    const modalContent = (
+        <div
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                zIndex: 9999999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(8px)'
+            }}
+            onClick={onClose}
+        >
             <div
                 style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)', // Restored standard dark overlay
-                    zIndex: 9999999, // High z-index to ensure visibility
+                    background: 'linear-gradient(to bottom right, #1A1A1A, #0F0F0F)',
+                    borderRadius: '32px',
+                    border: '1px solid #333',
+                    maxWidth: '50rem', // Wider than confirm modal to fit 2 cols
+                    width: '90%',
+                    maxHeight: '85vh',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backdropFilter: 'blur(4px)'
+                    flexDirection: 'column',
+                    overflow: 'hidden'
                 }}
-                onClick={onClose}
+                onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="bg-[#181818] border border-[#333] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div className="p-6 border-b border-[#333] flex justify-between items-start bg-[#222]">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{call.location}</h2>
-                            <div className="flex items-center gap-4 text-gray-400 text-sm">
-                                <div className="flex items-center gap-1">
-                                    <Clock size={16} />
-                                    <span>{call.hour}h00 - {call.hour + (call.duration === 90 ? 1 : 1)}h{call.duration === 90 ? "30" : "00"}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <UserIcon size={16} />
-                                    <span>Lancé par {call.creator?.name || "???"}</span>
-                                </div>
+                {/* Header */}
+                <div style={{
+                    background: 'linear-gradient(to bottom right, #222, #181818)',
+                    padding: '1.5rem',
+                    borderBottom: '1px solid #333',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'start'
+                }}>
+                    <div>
+                        <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                            <MapPin size={20} className="text-white" />
+                            {call.location}
+                        </h2>
+                        <div className="flex items-center gap-4 text-gray-400 text-xs uppercase tracking-wider font-medium">
+                            <div className="flex items-center gap-1.5">
+                                <Clock size={14} />
+                                <span>{call.hour}H - {call.hour + (call.duration === 90 ? 1 : 1)}H{call.duration === 90 ? "30" : "00"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <UserIcon size={14} />
+                                <span>PAR {call.creator?.name || "???"}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            {session?.user?.id === call?.creatorId && (
-                                <button
-                                    onClick={async () => {
-                                        if (!confirm("Supprimer cet appel ?")) return;
-                                        setLoading(true);
-                                        await fetch(`/api/calls?id=${call.id}`, { method: "DELETE" });
-                                        if (onResponseUpdate) onResponseUpdate();
-                                        onClose();
-                                        setLoading(false);
-                                    }}
-                                    className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
-                                    title="Supprimer l'appel"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                            )}
-                            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                <X className="text-gray-400" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {session?.user?.id === call?.creatorId && (
+                            <button
+                                onClick={async () => {
+                                    if (!confirm("Supprimer cet appel ?")) return;
+                                    setLoading(true);
+                                    await fetch(`/api/calls?id=${call.id}`, { method: "DELETE" });
+                                    if (onResponseUpdate) onResponseUpdate();
+                                    onClose();
+                                    setLoading(false);
+                                }}
+                                className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
+                                title="Supprimer l'appel"
+                            >
+                                <Trash2 size={18} />
                             </button>
-                        </div>
-                    </div>
-
-                    {/* Content: 2 Columns */}
-                    <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-6">
-
-                        {/* Left: ACCEPTS */}
-                        <div className="bg-[#1A1A1A] rounded-xl p-4 border border-green-900/30">
-                            <h3 className="text-green-500 font-bold mb-4 flex items-center gap-2 uppercase text-sm tracking-wider">
-                                <Check size={16} /> Présents ({responses.accepted.length})
-                            </h3>
-                            <div className="space-y-3">
-                                {responses.accepted.map((u: any, idx) => (
-                                    <div key={idx} className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden">
-                                            {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
-                                        </div>
-                                        <span className="text-gray-300 font-medium">
-                                            {u.name}
-                                            {u.isImplicit && <span className="text-xs text-[#1ED760] ml-2 font-normal italic">(Dispo)</span>}
-                                        </span>
-                                    </div>
-                                ))}
-                                {responses.accepted.length === 0 && (
-                                    <span className="text-gray-600 italic text-sm">Personne... pour l'instant.</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Right: REFUSALS */}
-                        <div className="bg-[#1A1A1A] rounded-xl p-4 border border-red-900/30">
-                            <h3 className="text-red-500 font-bold mb-4 flex items-center gap-2 uppercase text-sm tracking-wider">
-                                <XCircle size={16} /> Absents ({responses.declined.length})
-                            </h3>
-                            <div className="space-y-3">
-                                {responses.declined.map((u: any, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 opacity-60">
-                                        <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden">
-                                            {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
-                                        </div>
-                                        <span className="text-gray-400 font-medium line-through decoration-red-500/50">{u.name}</span>
-                                    </div>
-                                ))}
-                                {responses.declined.length === 0 && (
-                                    <span className="text-gray-600 italic text-sm">Aucun refus.</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Footer: Actions */}
-                    <div className="p-6 border-t border-[#333] bg-[#222] flex justify-center gap-4">
+                        )}
                         <button
-                            onClick={() => handleRespond("ACCEPTED")}
-                            disabled={loading}
-                            className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${myStatus === "ACCEPTED"
-                                ? "bg-green-600/20 text-green-500 border border-green-500 cursor-default"
-                                : "bg-green-600 text-white hover:bg-green-500 shadow-lg hover:shadow-green-500/20"
-                                }`}
+                            onClick={onClose}
+                            className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                         >
-                            {myStatus === "ACCEPTED" ? <Check size={18} /> : null}
-                            {myStatus === "ACCEPTED" ? "Présent" : "Accepter"}
-                        </button>
-
-                        <button
-                            onClick={() => handleRespond("DECLINED")}
-                            disabled={loading}
-                            className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${myStatus === "DECLINED"
-                                ? "bg-red-600/20 text-red-500 border border-red-500 cursor-default"
-                                : "bg-[#2A2A2A] text-gray-300 hover:bg-red-900/50 hover:text-red-400 border border-transparent hover:border-red-900"
-                                }`}
-                        >
-                            {myStatus === "DECLINED" ? <X size={18} /> : null}
-                            {myStatus === "DECLINED" ? "Refusé" : "Refuser"}
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
+
+                {/* Content: 2 Columns */}
+                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* Left: ACCEPTS */}
+                    <div className="bg-[#141414] rounded-2xl p-4 border border-green-900/20 flex flex-col h-full shadow-inner">
+                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+                            <h3 className="text-green-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+                                <Check size={14} /> Présents
+                            </h3>
+                            <span className="bg-green-500/10 text-green-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {responses.accepted.length}
+                            </span>
+                        </div>
+
+                        <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                            {responses.accepted.map((u: any, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                    <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden ring-1 ring-white/10 shrink-0">
+                                        {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
+                                    </div>
+                                    <span className="text-gray-300 text-sm font-medium truncate flex-1">
+                                        {u.name}
+                                    </span>
+                                    {u.isImplicit && (
+                                        <span className="text-[10px] text-[#1ED760] font-bold bg-[#1ED760]/10 px-1.5 py-0.5 rounded border border-[#1ED760]/20">
+                                            DISPO
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                            {responses.accepted.length === 0 && (
+                                <div className="text-gray-600 italic text-xs text-center py-8">
+                                    En attente de réponses...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right: REFUSALS */}
+                    <div className="bg-[#141414] rounded-2xl p-4 border border-red-900/20 flex flex-col h-full shadow-inner">
+                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+                            <h3 className="text-red-500 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+                                <XCircle size={14} /> Absents
+                            </h3>
+                            <span className="bg-red-500/10 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {responses.declined.length}
+                            </span>
+                        </div>
+
+                        <div className="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                            {responses.declined.map((u: any, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors opacity-60">
+                                    <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden shrink-0 grayscale">
+                                        {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
+                                    </div>
+                                    <span className="text-gray-400 text-sm font-medium line-through decoration-red-500/50 truncate">
+                                        {u.name}
+                                    </span>
+                                </div>
+                            ))}
+                            {responses.declined.length === 0 && (
+                                <div className="text-gray-600 italic text-xs text-center py-8">
+                                    Aucun refus pour le moment
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer: Actions */}
+                <div className="p-6 pt-4 bg-gradient-to-t from-[#0F0F0F] to-[#141414] border-t border-[#333] flex justify-center gap-4">
+                    <button
+                        onClick={() => handleRespond("ACCEPTED")}
+                        disabled={loading}
+                        className={`px-8 py-3 rounded-xl font-bold text-sm tracking-wide uppercase transition-all flex items-center gap-2 shadow-lg ${myStatus === "ACCEPTED"
+                            ? "bg-green-500/20 text-green-500 border border-green-500/50 cursor-default"
+                            : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-green-500/20"
+                            }`}
+                    >
+                        {myStatus === "ACCEPTED" ? <Check size={16} /> : null}
+                        {myStatus === "ACCEPTED" ? "Présent" : "Accepter"}
+                    </button>
+
+                    <button
+                        onClick={() => handleRespond("DECLINED")}
+                        disabled={loading}
+                        className={`px-8 py-3 rounded-xl font-bold text-sm tracking-wide uppercase transition-all flex items-center gap-2 shadow-lg ${myStatus === "DECLINED"
+                            ? "bg-red-500/20 text-red-500 border border-red-500/50 cursor-default"
+                            : "bg-[#2A2A2A] text-gray-300 hover:bg-[#333] hover:text-white border border-transparent hover:border-gray-600"
+                            }`}
+                    >
+                        {myStatus === "DECLINED" ? <X size={16} /> : null}
+                        {myStatus === "DECLINED" ? "Refusé" : "Refuser"}
+                    </button>
+                </div>
             </div>
-        ) : null
+        </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

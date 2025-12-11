@@ -689,7 +689,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                           {activeCall && <div className={`absolute inset-0 ${innerBgClass} pointer-events-none`}></div>}
 
                           {count > 0 && (
-                            <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-20">
+                            <div className="w-full h-full flex items-center justify-center pointer-events-none relative z-50">
                               <span className={`text-sm font-bold ${isSelected || isGold ? 'text-black' : (isFull ? 'text-red-500' : (activeCall ? 'text-[#5865F2]' : 'text-white'))}`}>
                                 {count}
                               </span>

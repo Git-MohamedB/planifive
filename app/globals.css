@@ -452,6 +452,11 @@ a {
   /* Even higher */
 }
 
+/* Force Green background on the mask when selected - explicit rule to be sure */
+.call-active-slot.selected::after {
+  background: #22c55e !important;
+}
+
 /* The rotating border effect (Layer 1) */
 .call-active-slot::before {
   content: '';

@@ -56,6 +56,7 @@ const config: Config = {
         'bounce-subtle': 'bounce-subtle 1s ease-in-out',
         'scale-in': 'scale-in 0.2s ease-out',
         'slide-up': 'slide-up 0.3s ease-out',
+        'dash': 'dash 1s linear infinite',
       },
       keyframes: {
         'glow-pulse': {
@@ -77,6 +78,9 @@ const config: Config = {
         'slide-up': {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'dash': {
+          'to': { strokeDashoffset: '-50' },
         },
       },
       fontFamily: {

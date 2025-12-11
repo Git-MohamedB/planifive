@@ -421,16 +421,7 @@ a {
 }
 
 /* ===== CALL ACTIVE SLOT ANIMATION (BLUE GLOW) ===== */
-/* ===== SVG DASH ANIMATION ===== */
-@keyframes dash {
-  to {
-    stroke-dashoffset: -50;
-  }
-}
 
-.animate-dash {
-  animation: dash 1s linear infinite;
-}
 
 /* Legacy .call-active-slot styles removed in favor of ActiveCallVisual.tsx */
 

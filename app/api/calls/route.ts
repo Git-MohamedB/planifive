@@ -91,6 +91,20 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+
+        if (id) {
+            const call = await prisma.call.findUnique({
+                where: { id },
+                include: {
+                    creator: { select: { name: true, image: true } },
+                    responses: { include: { user: { select: { id: true, name: true, image: true } } } }
+                }
+            });
+            return NextResponse.json(call);
+        }
+
         // Fetch calls for the next 7 days
         const today = new Date();
         today.setHours(0, 0, 0, 0);

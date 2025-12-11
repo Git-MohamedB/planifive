@@ -394,7 +394,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
     const key = `${dateStr}-${hour}`;
     const isSelected = mySlots.includes(key);
 
-    // Check if this slot is part of an active call created by the current user
+    // Check if this slot is part of an active call
     const callOnSlot = calls.find(c => {
       const d1 = new Date(c.date).toDateString();
       const d2 = new Date(dateStr).toDateString();
@@ -403,16 +403,17 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
       return d1 === d2 && hour >= start && hour < end;
     });
 
-    console.log("DEBUG CLICK CALL:", {
-      clicked: { date: dateStr, hour },
-      foundCall: callOnSlot ? callOnSlot.id : "NONE",
-      callsTotal: calls.length
-    });
-
     if (callOnSlot) {
-      console.log("OPENING MODAL FOR", callOnSlot.id);
-      setSelectedActiveCall(callOnSlot);
-      setDetailsModalOpen(true);
+      // Logic requested: If creator clicks, propose deletion (using existing pop-up)
+      if (session?.user?.id === callOnSlot.creatorId) {
+        setCallToDelete(callOnSlot.id);
+        setPendingAction("deleteCall");
+        setModalOpen(true);
+      } else {
+        // Otherwise open details/RSVP
+        setSelectedActiveCall(callOnSlot);
+        setDetailsModalOpen(true);
+      }
       return;
     }
 

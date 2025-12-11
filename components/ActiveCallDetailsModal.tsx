@@ -151,24 +151,24 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     borderBottom: '1px solid #333',
                 }}>
                     <div className="flex justify-between items-start">
-                        <div>
-                            {/* Top Line: Date/Time + Creator */}
-                            <div className="flex items-center gap-4 text-gray-400 text-[10px] uppercase tracking-wider font-bold mb-1">
-                                <div className="flex items-center gap-1.5">
-                                    <Clock size={12} />
-                                    <span>{call.hour}H - {call.hour + (call.duration === 90 ? 5 : 4)}H00</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <UserIcon size={12} />
-                                    <span>PAR {call.creator?.name || "???"}</span>
-                                </div>
+                        <div className="flex flex-col gap-3">
+                            {/* 1. Time */}
+                            <div className="flex items-center gap-3 text-sm font-bold text-gray-300">
+                                <Clock size={16} />
+                                <span>{call.hour}H - {call.hour + (call.duration === 90 ? 5 : 4)}H00</span>
                             </div>
 
-                            {/* Second Line: Location */}
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <MapPin size={20} className="text-white" />
-                                {call.location}
-                            </h2>
+                            {/* 2. Creator */}
+                            <div className="flex items-center gap-3 text-sm font-bold text-gray-300">
+                                <UserIcon size={16} />
+                                <span>PAR {call.creator?.name || "???"}</span>
+                            </div>
+
+                            {/* 3. Location */}
+                            <div className="flex items-center gap-3 text-sm font-bold text-white">
+                                <MapPin size={16} />
+                                <span>{call.location}</span>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             {session?.user?.id === call?.creatorId && (
@@ -210,8 +210,9 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
                         <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.accepted.map((u: any, idx) => (
-                                <div key={idx} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors group">
-                                    <div className="w-2 h-2 rounded-full bg-gray-800 overflow-hidden shrink-0 ring-1 ring-[#333]">
+                                <div key={idx} className="flex items-center gap-6 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors group">
+                                    {/* Forced tiny size */}
+                                    <div style={{ width: '8px', height: '8px', minWidth: '8px', minHeight: '8px' }} className="rounded-full bg-gray-800 overflow-hidden shrink-0 ring-1 ring-[#333]">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-400 group-hover:text-gray-200 text-xs font-medium truncate flex-1 transition-colors">
@@ -242,8 +243,8 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
                         <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                             {responses.declined.map((u: any, idx) => (
-                                <div key={idx} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors opacity-50 hover:opacity-100 group">
-                                    <div className="w-2 h-2 rounded-full bg-gray-800 overflow-hidden shrink-0 grayscale ring-1 ring-[#333]">
+                                <div key={idx} className="flex items-center gap-6 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors opacity-50 hover:opacity-100 group">
+                                    <div style={{ width: '8px', height: '8px', minWidth: '8px', minHeight: '8px' }} className="rounded-full bg-gray-800 overflow-hidden shrink-0 grayscale ring-1 ring-[#333]">
                                         {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
                                     </div>
                                     <span className="text-gray-500 group-hover:text-gray-400 text-xs font-medium line-through decoration-red-900 truncate">
@@ -261,28 +262,28 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 </div>
 
                 {/* Footer: Actions */}
-                <div className="p-8 pt-6 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center gap-3 items-center">
+                <div className="p-8 pt-6 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center gap-4 items-center">
                     <button
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
-                        className={`w-36 py-3 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
+                        className={`h-14 w-44 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
                             ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-default opacity-80"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)]"
                             }`}
                     >
-                        {myStatus === "ACCEPTED" ? <Check size={14} strokeWidth={3} /> : null}
+                        {myStatus === "ACCEPTED" ? <Check size={16} strokeWidth={3} /> : null}
                         {myStatus === "ACCEPTED" ? "PRÉSENT" : "ACCEPTER"}
                     </button>
 
                     <button
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
-                        className={`w-36 py-3 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
+                        className={`h-14 w-44 rounded-full font-black text-xs tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
                             ? "bg-[#2e1313] text-red-500 border border-red-900/50 cursor-default opacity-80"
-                            : "bg-red-600 text-white hover:bg-red-700 border border-transparent shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+                            : "bg-[#E50914] text-white hover:bg-[#b20710] border border-transparent shadow-[0_0_20px_rgba(229,9,20,0.4)]"
                             }`}
                     >
-                        {myStatus === "DECLINED" ? <X size={14} strokeWidth={3} /> : null}
+                        {myStatus === "DECLINED" ? <X size={16} strokeWidth={3} /> : null}
                         {myStatus === "DECLINED" ? "REFUSÉ" : "REFUSER"}
                     </button>
                 </div>

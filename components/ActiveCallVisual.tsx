@@ -7,22 +7,26 @@ interface ActiveCallVisualProps {
 const ActiveCallVisual = React.memo(({ isSelected }: ActiveCallVisualProps) => {
     return (
         <>
-            {/* Layer 1: Rotating Gradient Border */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-[inherit]">
-                <div
-                    className="absolute -inset-[50%] animate-spin"
-                    style={{
-                        background: 'conic-gradient(from 0deg, transparent 0 50%, #5865F2 70%, #00C7FF 90%, #5865F2 100%)',
-                        animationDuration: '3s',
-                        opacity: 1
-                    }}
-                />
-            </div>
-            {/* Layer 2: Inner Background Color (Masking the center) */}
+            {/* Layer 1: Background Color */}
             <div
-                className="absolute inset-[4px] z-10 pointer-events-none transition-colors duration-200"
+                className="absolute inset-0 z-0 transition-colors duration-200"
                 style={{ backgroundColor: isSelected ? '#22c55e' : '#1A1A1A' }}
             />
+
+            {/* Layer 2: Animated SVG Border */}
+            <svg className="absolute inset-0 w-full h-full z-10 pointer-events-none">
+                <rect
+                    x="2"
+                    y="2"
+                    width="calc(100% - 4px)"
+                    height="calc(100% - 4px)"
+                    fill="none"
+                    stroke="#5865F2"
+                    strokeWidth="4"
+                    strokeDasharray="40 10"
+                    className="animate-dash"
+                />
+            </svg>
         </>
     );
 });

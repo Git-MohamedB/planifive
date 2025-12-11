@@ -7,10 +7,22 @@ interface ActiveCallVisualProps {
 const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
     return (
         <>
+            <style>{`
+                @keyframes snake-border {
+                    to { stroke-dashoffset: -50px; }
+                }
+                .snake-anim {
+                    animation: snake-border 1s linear infinite;
+                }
+            `}</style>
+
             {/* Layer 1: Background Color */}
             <div
                 className="absolute inset-0 z-1 transition-colors duration-200"
-                style={{ backgroundColor: isSelected ? '#22c55e' : '#1A1A1A' }}
+                style={{
+                    backgroundColor: isSelected ? '#22c55e !important' : '#1A1A1A',
+                    opacity: 1
+                }}
             />
 
             {/* Layer 2: Animated SVG Border */}
@@ -24,7 +36,7 @@ const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
                     stroke="#5865F2"
                     strokeWidth="4"
                     strokeDasharray="40 10"
-                    className="animate-dash"
+                    className="snake-anim"
                 />
             </svg>
         </>

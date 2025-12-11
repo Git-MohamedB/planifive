@@ -482,8 +482,8 @@ a {
 .call-active-slot::after {
   content: '';
   position: absolute;
-  inset: 2px;
-  /* Border thickness */
+  inset: 4px;
+  /* Thicker border (4px) for better visibility */
   background: var(--slot-bg);
   /* Uses the variable! */
   z-index: 2;

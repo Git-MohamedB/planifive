@@ -686,9 +686,9 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                               {/* Layer 1: Rotating Gradient Border */}
                               <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-[inherit]">
                                 <div
-                                  className="absolute -inset-[50%] animate-[spin_3s_linear_infinite]"
+                                  className="absolute -inset-[50%] animate-spin-slow"
                                   style={{
-                                    backgroundImage: 'conic-gradient(transparent 0deg, transparent 50%, #5865F2 70%, #00C7FF 90%, #5865F2 100%)',
+                                    background: 'conic-gradient(rgba(88,101,242,0) 0deg, rgba(88,101,242,0) 180deg, #5865F2 250deg, #00C7FF 320deg, #5865F2 360deg)',
                                     opacity: 1
                                   }}
                                 />

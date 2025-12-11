@@ -421,14 +421,18 @@ a {
 }
 
 /* ===== CALL ACTIVE SLOT ANIMATION (BLUE GLOW) ===== */
-@keyframes borderSpin {
-  0% {
+@keyframes spinSlow {
+  from {
     transform: rotate(0deg);
   }
 
-  100% {
+  to {
     transform: rotate(360deg);
   }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 4s linear infinite;
 }
 
 .call-active-slot {

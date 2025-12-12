@@ -253,8 +253,8 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
-                        className={`cursor-pointer shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
-                            ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-pointer"
+                        className={`!cursor-pointer relative z-10 shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
+                            ? "bg-[#132e13] text-green-500 border border-green-900/50"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.5)]"
                             }`}
                     >
@@ -269,9 +269,9 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
-                        className={`cursor-pointer shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
-                            ? "bg-[#991b1b] text-red-200 border border-red-900/50 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-                            : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
+                        className={`!cursor-pointer relative z-10 shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
+                            ? "bg-[#991b1b] text-red-200 border border-red-900/50 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
+                            : "bg-red-600 text-white hover:bg-red-400 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.8)]"
                             }`}
                     >
                         {myStatus === "DECLINED" ? <X size={16} strokeWidth={3} /> : null}

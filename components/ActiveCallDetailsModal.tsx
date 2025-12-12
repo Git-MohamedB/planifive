@@ -168,7 +168,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                                         onClose();
                                         setLoading(false);
                                     }}
-                                    className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
+                                    className="cursor-pointer p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
                                     title="Supprimer l'appel"
                                 >
                                     <Trash2 size={18} />
@@ -176,7 +176,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                             )}
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                                className="cursor-pointer p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
                             >
                                 <X size={18} />
                             </button>
@@ -254,7 +254,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
                         className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
-                            ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-default"
+                            ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-pointer"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.5)]"
                             }`}
                     >
@@ -270,7 +270,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
                         className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
-                            ? "bg-[#991b1b] text-red-200 border border-red-900/50 cursor-default shadow-[0_0_20px_rgba(220,38,38,0.5)]"
+                            ? "bg-[#991b1b] text-red-200 border border-red-900/50 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.5)]"
                             : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
                             }`}
                     >

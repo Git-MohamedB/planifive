@@ -248,11 +248,12 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 </div>
 
                 {/* Footer: Actions */}
-                <div className="px-8 py-20 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center gap-8 items-center">
+                <div className="px-8 py-20 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center items-center">
                     <button
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
-                        className={`h-20 w-72 shrink-0 rounded-full font-black text-sm tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
+                        style={{ width: '300px', height: '90px' }}
+                        className={`shrink-0 rounded-full font-black text-sm tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "ACCEPTED"
                             ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-default"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.3)]"
                             }`}
@@ -261,10 +262,14 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         {myStatus === "ACCEPTED" ? "PRÉSENT" : "ACCEPTER"}
                     </button>
 
+                    {/* Manual Spacer */}
+                    <div style={{ width: '40px' }} className="shrink-0"></div>
+
                     <button
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
-                        className={`h-20 w-72 shrink-0 rounded-full font-black text-sm tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
+                        style={{ width: '300px', height: '90px' }}
+                        className={`shrink-0 rounded-full font-black text-sm tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${myStatus === "DECLINED"
                             ? "bg-red-600 text-white border border-red-800 cursor-default shadow-[0_0_20px_rgba(220,38,38,0.5)]"
                             : "bg-red-600 text-white hover:bg-red-700 border border-transparent shadow-[0_0_20px_rgba(220,38,38,0.4)]"
                             }`}

@@ -578,7 +578,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
                 label={`SAUVEGARDER`}
                 icon={<Save size={14} />}
                 green
-                className="rounded-none shadow-[0_0_15px_rgba(34,197,94,0.3)] px-8"
+                className="rounded-full cursor-pointer shadow-[0_0_15px_rgba(34,197,94,0.3)] px-8"
               />
             </div>
           )}

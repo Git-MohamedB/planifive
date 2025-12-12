@@ -190,7 +190,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     {/* Left: ACCEPTS */}
                     <div className="bg-[#141414] rounded-3xl p-5 border border-[#1f1f1f] flex flex-col h-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                         <div className="mb-4 pb-2 border-b border-[#222]">
-                            <h3 className="text-green-500 font-bold text-xs uppercase tracking-[0.2em] flex items-center gap-2">
+                            <h3 className="text-green-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Check size={13} /> Présents ({responses.accepted.length})
                             </h3>
                         </div>
@@ -222,7 +222,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     {/* Right: REFUSALS */}
                     <div className="bg-[#141414] rounded-3xl p-5 border border-[#1f1f1f] flex flex-col h-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                         <div className="mb-4 pb-2 border-b border-[#222]">
-                            <h3 className="text-red-500 font-bold text-xs uppercase tracking-[0.2em] flex items-center gap-2">
+                            <h3 className="text-red-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
                                 <XCircle size={14} /> Absents ({responses.declined.length})
                             </h3>
                         </div>
@@ -253,7 +253,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
-                        className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
+                        className={`cursor-pointer shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
                             ? "bg-[#132e13] text-green-500 border border-green-900/50 cursor-pointer"
                             : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.5)]"
                             }`}
@@ -269,7 +269,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
-                        className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
+                        className={`cursor-pointer shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
                             ? "bg-[#991b1b] text-red-200 border border-red-900/50 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.5)]"
                             : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
                             }`}

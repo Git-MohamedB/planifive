@@ -69,7 +69,28 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
         }
     };
 
+    const isCreator = session?.user?.id === call?.creatorId;
+
+    const handleDelete = async () => {
+        if (!confirm("Voulez-vous vraiment ANNULER cet appel ? Cela le supprimera pour tout le monde.")) return;
+        setLoading(true);
+        try {
+            await fetch(`/api/calls?id=${call.id}`, { method: "DELETE" });
+            if (onResponseUpdate) onResponseUpdate();
+            onClose();
+        } catch (e) {
+            console.error(e);
+        }
+        setLoading(false);
+    };
+
     const handleRespond = async (status: "ACCEPTED" | "DECLINED") => {
+        // If Creator clicks Decline -> Trigger Delete
+        if (status === "DECLINED" && isCreator) {
+            handleDelete();
+            return;
+        }
+
         setLoading(true);
         try {
             // 1. Send Response Status
@@ -160,14 +181,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         <div className="flex items-center gap-2">
                             {session?.user?.id === call?.creatorId && (
                                 <button
-                                    onClick={async () => {
-                                        if (!confirm("Supprimer cet appel ?")) return;
-                                        setLoading(true);
-                                        await fetch(`/api/calls?id=${call.id}`, { method: "DELETE" });
-                                        if (onResponseUpdate) onResponseUpdate();
-                                        onClose();
-                                        setLoading(false);
-                                    }}
+                                    onClick={handleDelete}
                                     className="cursor-pointer p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
                                     title="Supprimer l'appel"
                                 >

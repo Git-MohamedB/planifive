@@ -248,7 +248,7 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                 </div>
 
                 {/* Footer: Actions */}
-                <div className="px-8 py-8 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center items-center gap-10">
+                <div className="px-8 py-8 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center items-center">
                     <button
                         onClick={() => handleRespond("ACCEPTED")}
                         disabled={loading}
@@ -262,13 +262,16 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                         {myStatus === "ACCEPTED" ? "PRÉSENT" : "ACCEPTER"}
                     </button>
 
+                    {/* Manual Spacer for guaranteed gap */}
+                    <div style={{ width: '40px' }} className="shrink-0"></div>
+
                     <button
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
                         className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
                             ? "bg-red-600 text-white border border-red-800 cursor-default shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-                            : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] border border-transparent"
+                            : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] border border-transparent"
                             }`}
                     >
                         {myStatus === "DECLINED" ? <X size={16} strokeWidth={3} /> : null}

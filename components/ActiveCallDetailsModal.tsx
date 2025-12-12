@@ -263,15 +263,15 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     </button>
 
                     {/* Manual Spacer for guaranteed gap */}
-                    <div style={{ width: '40px' }} className="shrink-0"></div>
+                    <div style={{ width: '48px' }} className="shrink-0"></div>
 
                     <button
                         onClick={() => handleRespond("DECLINED")}
                         disabled={loading}
                         style={{ width: '160px', height: '40px' }}
                         className={`shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
-                            ? "bg-red-600 text-white border border-red-800 cursor-default shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-                            : "bg-red-600 text-white hover:bg-red-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] border border-transparent"
+                            ? "bg-[#991b1b] text-red-200 border border-red-900/50 cursor-default shadow-[0_0_20px_rgba(220,38,38,0.5)]"
+                            : "bg-[#ef4444] text-white hover:bg-[#f87171] hover:scale-105 hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] border border-transparent"
                             }`}
                     >
                         {myStatus === "DECLINED" ? <X size={16} strokeWidth={3} /> : null}

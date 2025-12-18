@@ -101,6 +101,24 @@ export default function AdminPage() {
         }
     };
 
+    const handleBanUser = async (userId: string) => {
+        const confirmMessage = "ATTENTION : Vous êtes sur le point de BANNIR ce joueur.\n\nCette action est irréversible et supprimera :\n- Son compte\n- Ses statistiques\n- Ses réservations\n\nÊtes-vous sûr de vouloir continuer ?";
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+            if (res.ok) {
+                setUsers(users.filter(u => u.id !== userId));
+            } else {
+                const data = await res.json();
+                alert(`Erreur: ${data.error || "Suppression échouée"}`);
+            }
+        } catch (error) {
+            console.error("Error banning user:", error);
+            alert("Erreur réseau");
+        }
+    };
+
     if (status === "loading" || !isAdmin) {
         return (
             <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">
@@ -341,6 +359,14 @@ export default function AdminPage() {
                                                 ) : (
                                                     <span className="text-xs text-gray-600">-</span>
                                                 )}
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <button
+                                                    onClick={() => handleBanUser(user.id)}
+                                                    className="text-red-500 hover:text-red-400 hover:bg-red-500/10 px-3 py-1 rounded text-xs font-bold transition-colors uppercase tracking-wider border border-red-500/30"
+                                                >
+                                                    Bannir
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

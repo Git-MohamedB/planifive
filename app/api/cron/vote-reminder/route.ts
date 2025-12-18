@@ -28,12 +28,16 @@ export async function GET(req: Request) {
             return NextResponse.json({ message: "No future calls found. No ping sent." });
         }
 
-        // 2. Fetch All Users with Discord Accounts
-        // We need the discord ID (providerAccountId) to mention them
+        // 2. Fetch All Users with Discord Accounts + Future Availabilities
+        // We need the discord ID to mention them
+        // We also check their availabilities to see if they "implicitly" voted
         const allUsers = await prisma.user.findMany({
             include: {
                 accounts: {
                     where: { provider: 'discord' }
+                },
+                availabilities: {
+                    where: { date: { gte: now } }
                 }
             }
         });
@@ -49,10 +53,17 @@ export async function GET(req: Request) {
             const missingForThisUser: string[] = [];
 
             for (const call of futureCalls) {
-                // Check if user has responded to this call
+                // Check A: Has responded explicitly?
                 const hasResponded = call.responses.some(r => r.userId === user.id);
 
-                if (!hasResponded) {
+                // Check B: Has set availability for this slot? (Implicit vote)
+                // We compare date (day) and hour.
+                const hasAvailability = user.availabilities.some(a =>
+                    new Date(a.date).toDateString() === new Date(call.date).toDateString() &&
+                    a.hour === call.hour
+                );
+
+                if (!hasResponded && !hasAvailability) {
                     const dateStr = new Date(call.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'numeric' });
                     missingForThisUser.push(dateStr);
                 }

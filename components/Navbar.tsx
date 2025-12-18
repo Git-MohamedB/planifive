@@ -36,7 +36,7 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
 
   return (
     <>
-      <div style={{ height: '60px', background: '#121212', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: '1px solid #333', marginBottom: '12px', position: 'relative', zIndex: 50 }}>
+      <div style={{ height: '60px', background: '#121212', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: '1px solid #333', marginBottom: '12px', position: 'relative', zIndex: 2000 }}>
 
         {/* Left: Logo */}
         <Link href="/" className="nav-logo-hover" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit', zIndex: 10 }}>

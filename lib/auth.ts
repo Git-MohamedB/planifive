@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
       // We can do a quick check:
       if (user.email) {
         const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+        // @ts-ignore
         if (dbUser?.isBanned) {
           console.log(`⛔ User ${user.email} is banned. Blocking sign in.`);
           return false; // Blocks sign in

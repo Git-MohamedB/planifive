@@ -31,7 +31,13 @@ export async function GET(req: Request) {
         // 2. Fetch All Users with Discord Accounts + Future Availabilities
         // We need the discord ID to mention them
         // We also check their availabilities to see if they "implicitly" voted
+        // 2. Fetch All Users with Discord Accounts + Future Availabilities
+        // We need the discord ID to mention them
+        // We also check their availabilities to see if they "implicitly" voted
         const allUsers = await prisma.user.findMany({
+            where: {
+                isBanned: false // EXCLUDE BANNED USERS
+            },
             include: {
                 accounts: {
                     where: { provider: 'discord' }
@@ -40,24 +46,19 @@ export async function GET(req: Request) {
                     where: { date: { gte: now } }
                 }
             }
-        });
+        } as any);
 
         // 3. Identification Logic
-        // We want a map: UserID -> Array of missing Call Dates
         const missingVotesByUser: Record<string, { discordId: string, name: string, missingDates: string[] }> = {};
 
         for (const user of allUsers) {
             const discordAccount = user.accounts[0];
-            if (!discordAccount?.providerAccountId) continue; // Skip users without Discord linked
+            if (!discordAccount?.providerAccountId) continue;
 
             const missingForThisUser: string[] = [];
 
             for (const call of futureCalls) {
-                // Check A: Has responded explicitly?
                 const hasResponded = call.responses.some(r => r.userId === user.id);
-
-                // Check B: Has set availability for this slot? (Implicit vote)
-                // We compare date (day) and hour.
                 const hasAvailability = user.availabilities.some(a =>
                     new Date(a.date).toDateString() === new Date(call.date).toDateString() &&
                     a.hour === call.hour
@@ -85,17 +86,19 @@ export async function GET(req: Request) {
         }
 
         // 4. Construct Consolidated Message
-        // "Vous n'avez pas répondu à un appel en cours le [Date 1], [Date 2]..."
-
-        // We will build a description string list.
-        // To avoid hitting Discord's 2000 char limit or embed limit, we should be concise.
-
+        // Mentions must be in content to PING
+        let mentionsString = "";
         let description = "**Des votes sont manquants pour les prochains Five !**\n\n";
 
         for (const userId of missingUserIds) {
             const data = missingVotesByUser[userId];
             const datesString = data.missingDates.join(", ");
-            description += `<@${data.discordId}> : Pas de réponse pour le **${datesString}**\n`;
+
+            // Add to Notification content
+            mentionsString += `<@${data.discordId}> `;
+
+            // Add to Embed description
+            description += `**${data.name}** : Pas de réponse pour le **${datesString}**\n`;
         }
 
         description += "\n👉 [Rendez-vous sur PlaniFive pour voter !](https://planifive.vercel.app/)";
@@ -110,9 +113,11 @@ export async function GET(req: Request) {
 
         // 5. Send Webhook
         if (process.env.NODE_ENV !== 'development' || req.url.includes('dryRun')) {
-            await sendDiscordWebhook(embed);
+            // Pass mentionsString as "content" to trigger push notification
+            await sendDiscordWebhook(embed, mentionsString);
         } else {
             console.log("Dev mode: Webhook not sent", JSON.stringify(embed, null, 2));
+            console.log("Mentions Content:", mentionsString);
         }
 
         return NextResponse.json({

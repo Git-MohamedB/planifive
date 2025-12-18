@@ -6,15 +6,18 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     try {
-        const session = await getServerSession(authOptions);
-        const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
-
-        if (!session || !session.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-        }
-
+        // Public route for Leaderboard usage (filtering banned users)
+        // Restricted fields for privacy
         const users = await prisma.user.findMany({
             orderBy: { name: 'asc' },
+            select: {
+                id: true,
+                name: true,
+                image: true,
+                customName: true,
+                isBanned: true
+                // No email, no accounts
+            }
         });
         return NextResponse.json(users);
     } catch (error) {

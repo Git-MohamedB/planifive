@@ -71,6 +71,14 @@ export default function LeaderboardPage() {
     const calculateStats = (matches: Match[], users: User[]) => {
         const playerStats: { [key: string]: PlayerStats } = {};
 
+        // Create a robust set of banned names (both display name and custom name)
+        const bannedNames = new Set(
+            users.filter(u => u.isBanned).flatMap(u => [
+                u.name?.toLowerCase(),
+                u.customName?.toLowerCase()
+            ]).filter(Boolean)
+        );
+
         matches.forEach(match => {
             const team1Won = match.scoreTeam1 > match.scoreTeam2;
             const team2Won = match.scoreTeam2 > match.scoreTeam1;
@@ -84,12 +92,18 @@ export default function LeaderboardPage() {
             team1Players.forEach(name => {
                 if (!name || !name.trim()) return;
                 const cleanName = name.trim();
-                // Case insensitive matching
+                const lowerName = cleanName.toLowerCase();
+
+                // 1. Check against Banned Names Set
+                if (bannedNames.has(lowerName)) return;
+
+                // 2. Case insensitive matching with User DB
                 const userMatch = users.find(u =>
-                    (u.customName && u.customName.toLowerCase() === cleanName.toLowerCase()) ||
-                    (u.name && u.name.toLowerCase() === cleanName.toLowerCase())
+                    (u.customName && u.customName.toLowerCase() === lowerName) ||
+                    (u.name && u.name.toLowerCase() === lowerName)
                 );
 
+                // 3. Double Check Banned status
                 if (userMatch?.isBanned) return;
 
                 const playerImage = userMatch?.image || null;
@@ -118,11 +132,19 @@ export default function LeaderboardPage() {
             team2Players.forEach(name => {
                 if (!name || !name.trim()) return;
                 const cleanName = name.trim();
-                // Case insensitive matching
+                const lowerName = cleanName.toLowerCase();
+
+                // 1. Check against Banned Names Set
+                if (bannedNames.has(lowerName)) return;
+
+                // 2. Case insensitive matching with User DB
                 const userMatch = users.find(u =>
-                    (u.customName && u.customName.toLowerCase() === cleanName.toLowerCase()) ||
-                    (u.name && u.name.toLowerCase() === cleanName.toLowerCase())
+                    (u.customName && u.customName.toLowerCase() === lowerName) ||
+                    (u.name && u.name.toLowerCase() === lowerName)
                 );
+
+                if (userMatch?.isBanned) return;
+
                 const playerImage = userMatch?.image || null;
 
                 // Use the standardized name from the user record if matched, otherwise the input name

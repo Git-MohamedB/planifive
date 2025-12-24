@@ -109,6 +109,46 @@ async function getUpdatedEmbed(callId: string) {
     return embed;
 }
 
+// Helper to sync availability on Accept
+async function syncAvailabilityOnAccept(userId: string, call: any) {
+    // If the user accepts the call, we add availability for the duration of the call
+    const slotsCount = call.duration === 90 ? 5 : 4;
+    const slots = Array.from({ length: slotsCount }, (_, i) => call.hour + i);
+
+    const upserts = slots.map(h => {
+        if (h > 23) return null;
+        return prisma.availability.upsert({
+            where: {
+                userId_date_hour: {
+                    userId,
+                    date: call.date,
+                    hour: h
+                }
+            },
+            create: { userId, date: call.date, hour: h },
+            update: {} // Logic: if already exists, do nothing
+        });
+    });
+
+    await Promise.all(upserts.filter(p => p !== null));
+}
+
+// Helper to remove availability on Cancel (for creator)
+async function syncAvailabilityOnCancel(userId: string, call: any) {
+    // If creator cancels, we assume they want to clear that block or at least we remove their Availabilities
+    // matching the call time.
+    const slotsCount = call.duration === 90 ? 5 : 4;
+    const slots = Array.from({ length: slotsCount }, (_, i) => call.hour + i);
+
+    await prisma.availability.deleteMany({
+        where: {
+            userId,
+            date: call.date,
+            hour: { in: slots }
+        }
+    });
+}
+
 export async function POST(req: Request) {
     try {
         if (!PUB_KEY) {
@@ -163,16 +203,24 @@ export async function POST(req: Request) {
 
             const userId = userAccount.userId;
 
+            // Retrieve Call (Basic fetch for permission checks, full fetch inside helpers if needed but we pass `call` to helpers)
+            // Ideally we need date/hour for helpers, so let's fetch basic.
+            const call = await prisma.call.findUnique({ where: { id: callId } });
+
+            if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
+
             // --- CANCEL ACTION ---
             if (action === "cancel_call") {
-                const call = await prisma.call.findUnique({ where: { id: callId } });
-                if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
-
                 if (call.creatorId !== userId) {
                     return NextResponse.json({ type: 4, data: { content: "❌ Seul le créateur peut annuler l'appel.", flags: 64 } });
                 }
 
-                await prisma.call.delete({ where: { id: callId } });
+                // Parallelize: Delete Call AND Delete Creator's Availability
+                const cancelTasks = [
+                    prisma.call.delete({ where: { id: callId } }),
+                    syncAvailabilityOnCancel(userId, call)
+                ];
+                await Promise.all(cancelTasks);
 
                 return NextResponse.json({
                     type: 7, // Update Message
@@ -187,41 +235,43 @@ export async function POST(req: Request) {
                 });
             }
 
-            // ... inside POST ...
-
             // --- PARTICIPATION ACTION ---
-            const call = await prisma.call.findUnique({ where: { id: callId } });
-            if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
+            if (action === "decline_call" && call.creatorId === userId) {
+                return NextResponse.json({ type: 4, data: { content: "❌ Le créateur ne peut pas refuser son propre appel.", flags: 64 } });
+            }
 
-            // ... checks ...
+            const status = action === "accept_call" ? "ACCEPTED" : "DECLINED";
 
-            try {
-                const status = action === "accept_call" ? "ACCEPTED" : "DECLINED";
-
-                await prisma.callResponse.upsert({
+            // Optimize: Upsert Response AND Sync Availability (if accept) in parallel
+            const tasks: any[] = [
+                prisma.callResponse.upsert({
                     where: { callId_userId: { callId, userId } },
                     create: { callId, userId, status },
                     update: { status }
-                });
+                })
+            ];
 
-                // Re-calculate Embed with fresh data
-                const newEmbed = await getUpdatedEmbed(callId);
-
-                if (!newEmbed) {
-                    console.error("Failed to generate updated embed");
-                    return NextResponse.json({ type: 4, data: { content: "Erreur lors de la mise à jour de l'affichage.", flags: 64 } });
-                }
-
-                return NextResponse.json({
-                    type: 7,
-                    data: {
-                        embeds: [newEmbed]
-                    }
-                });
-            } catch (innerError) {
-                console.error("Error processing participation:", innerError);
-                return NextResponse.json({ type: 4, data: { content: "Une erreur interne est survenue.", flags: 64 } });
+            if (action === "accept_call") {
+                tasks.push(syncAvailabilityOnAccept(userId, call));
             }
+
+            // Execute concurrent tasks
+            await Promise.all(tasks);
+
+            // Re-calculate Embed with fresh data
+            const newEmbed = await getUpdatedEmbed(callId);
+
+            if (!newEmbed) {
+                console.error("Failed to generate updated embed");
+                return NextResponse.json({ type: 4, data: { content: "Erreur affichage.", flags: 64 } });
+            }
+
+            return NextResponse.json({
+                type: 7,
+                data: {
+                    embeds: [newEmbed]
+                }
+            });
         }
 
         return NextResponse.json({ error: "Unknown Type" }, { status: 400 });

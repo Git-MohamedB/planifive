@@ -22,6 +22,7 @@ export async function GET(req: Request) {
         } as any) as any;
 
         if (!process.env.DISCORD_BOT_TOKEN) {
+            console.error("CRITICAL: DISCORD_BOT_TOKEN is missing from environment variables.");
             return NextResponse.json({ error: "DISCORD_BOT_TOKEN missing" }, { status: 500 });
         }
 

@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Call API
         run: |
-          curl --fail -v -X GET https://planifive.vercel.app/api/cron/sync-avatars \
+          curl -v -X GET https://planifive.vercel.app/api/cron/sync-avatars \
           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

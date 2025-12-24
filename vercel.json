@@ -3,10 +3,6 @@
         {
             "path": "/api/cron/reminder",
             "schedule": "0 18 */2 * *"
-        },
-        {
-            "path": "/api/cron/vote-reminder",
-            "schedule": "0 12 * * 1,4"
         }
     ]
 }

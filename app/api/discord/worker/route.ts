@@ -2,34 +2,37 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const APP_ID = process.env.DISCORD_APP_ID;
+const APP_ID = process.env.DISCORD_APP_ID || process.env.DISCORD_APPLICATION_ID || process.env.DISCORD_CLIENT_ID;
 
 // Helper: Edit the original Discord message via Webhook
 async function editDiscordMessage(token: string, data: any) {
-    if (!APP_ID) return;
+    if (!APP_ID) {
+        console.error("❌ CRITICAL: No APP_ID found in env!");
+        return;
+    }
     const url = `https://discord.com/api/v10/webhooks/${APP_ID}/${token}/messages/@original`;
-    // We can also allow "Followup" for ephemeral messages using a different URL?
-    // Ephemeral messages for "List" must be sent as Follow-up since we deferred?
-    // Actually, Type 6 defers "Update Message".
-    // Type 5 defers "Channel Message".
-    // We will handle logic inside.
 
-    await fetch(url, {
+    const res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     });
+    if (!res.ok) console.error("Failed to edit discord message", await res.text());
 }
 
 // Helper: Send Follow-up (for Ephemeral results)
 async function sendFollowUp(token: string, data: any) {
-    if (!APP_ID) return;
+    if (!APP_ID) {
+        console.error("❌ CRITICAL: No APP_ID found in env!");
+        return;
+    }
     const url = `https://discord.com/api/v10/webhooks/${APP_ID}/${token}`;
-    await fetch(url, {
+    const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     });
+    if (!res.ok) console.error("Failed to send follow up", await res.text());
 }
 
 async function getUpdatedEmbedData(callId: string) {
@@ -148,9 +151,10 @@ async function syncAvailability(userId: string, callId: string, action: 'add' | 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { action, callId, userId, token, userAccountName } = body;
+        const { action, callId, userId, token, userAccountName } = body; // action, etc.
 
         if (!action || !callId || !userId || !token) {
+            console.error("Worker: Missing params", body);
             return NextResponse.json({ error: "Missing params" }, { status: 400 });
         }
 

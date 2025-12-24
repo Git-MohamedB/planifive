@@ -7,6 +7,108 @@ const prisma = new PrismaClient();
 // Your Discord Public Key from Vercel ENV
 const PUB_KEY = process.env.DISCORD_PUBLIC_KEY;
 
+// Helper to generate the updated Embed
+async function getUpdatedEmbed(callId: string) {
+    const call = await prisma.call.findUnique({
+        where: { id: callId },
+        include: {
+            creator: true,
+            responses: { include: { user: true } }
+        }
+    });
+
+    if (!call) return null;
+
+    // 1. Fetch Implicit Participants (Availability on Grid)
+    // Logic: 1h -> 4 slots
+    const slotsCount = call.duration === 90 ? 5 : 4;
+    const slots = Array.from({ length: slotsCount }, (_, i) => call.hour + i);
+
+    // Find users who have ALL these slots
+    // Since we need to join multiple times, simplified approach:
+    // User must have availability for Call Date at Hour X, X+1...
+    // We fetch all availabilities for this date/hours
+    const availabilities = await prisma.availability.findMany({
+        where: {
+            date: call.date,
+            hour: { in: slots }
+        },
+        select: { userId: true, hour: true }
+    });
+
+    const userMap: Record<string, number> = {};
+    availabilities.forEach(a => {
+        userMap[a.userId] = (userMap[a.userId] || 0) + 1;
+    });
+
+    const implicitUserIds = Object.keys(userMap).filter(uid => userMap[uid] === slotsCount);
+
+    // 2. Merge with Explicit Responses (ACCEPTED)
+    const acceptedUserIds = new Set<string>();
+
+    // Explicit wins
+    call.responses.forEach(r => {
+        if (r.status === "ACCEPTED") acceptedUserIds.add(r.userId);
+    });
+
+    // Add implicit if not explicitly declined
+    implicitUserIds.forEach(uid => {
+        const hasResponse = call.responses.find(r => r.userId === uid);
+        if (!hasResponse || hasResponse.status !== "DECLINED") {
+            acceptedUserIds.add(uid);
+        }
+    });
+
+    // 3. Fetch User Names for the List
+    const participants = await prisma.user.findMany({
+        where: { id: { in: Array.from(acceptedUserIds) } },
+        select: { name: true, customName: true }
+    });
+
+    const participantNames = participants.map(p => p.customName || p.name || "Joueur");
+    const count = participantNames.length;
+    const missing = 10 - count;
+
+    // Reconstruct Embed
+    const dateObj = new Date(call.date);
+    const dateStr = dateObj.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
+    const durationStr = call.duration === 90 ? "1h30" : "1h00";
+
+    let description = `**${call.creator.name || "Un joueur"}** lance un appel pour un Five !\n\n📅 **${dateStr}**\n⏰ **${call.hour}h00**\n⏱️ **Durée : ${durationStr}**\n📍 **${call.location}**`;
+    if (call.price) description += `\n💰 **Prix : ${call.price}**`;
+    if (call.comment) description += `\n📝 **Note : ${call.comment}**`;
+    description += `\n\n👉 Connectez-vous pour rejoindre !`;
+
+    const embed = {
+        title: "📢 NOUVEL APPEL FIVE !",
+        description: description,
+        color: 5763719, // #57F287 (Green)
+        url: "https://planifive.vercel.app/",
+        fields: [
+            {
+                name: "Créneau réservé",
+                value: `${call.hour}h - ${(call.hour + slotsCount) % 24 === 0 ? "00" : (call.hour + slotsCount) % 24}h`,
+                inline: true
+            },
+            {
+                name: `👥 Participants (${count}/10)`,
+                value: count > 0 ? participantNames.join(", ") : "Aucun inscrit pour le moment",
+                inline: false
+            },
+            {
+                name: "🔥 Places restantes",
+                value: `${missing > 0 ? missing : 0} places`,
+                inline: true
+            }
+        ],
+        thumbnail: { url: call.creator.image || "" },
+        footer: { text: "Planifive • Let's play!" },
+        timestamp: new Date().toISOString(),
+    };
+
+    return embed;
+}
+
 export async function POST(req: Request) {
     try {
         if (!PUB_KEY) {
@@ -17,7 +119,7 @@ export async function POST(req: Request) {
         // 1. Verify Signature
         const signature = req.headers.get("X-Signature-Ed25519");
         const timestamp = req.headers.get("X-Signature-Timestamp");
-        const bodyText = await req.text(); // Raw body is needed for verification
+        const bodyText = await req.text();
 
         if (!signature || !timestamp || !bodyText) {
             return NextResponse.json({ error: "Invalid Request" }, { status: 401 });
@@ -36,85 +138,85 @@ export async function POST(req: Request) {
         // 2. Parse Body
         const body = JSON.parse(bodyText);
 
-        // 3. Handle PING (Type 1)
-        if (body.type === 1) {
-            return NextResponse.json({ type: 1 });
-        }
+        // 3. Handle PING
+        if (body.type === 1) return NextResponse.json({ type: 1 });
 
-        // 4. Handle Message Components (Buttons) (Type 3)
+        // 4. Handle Buttons (Type 3)
         if (body.type === 3) {
             const customId = body.data.custom_id;
             const discordUserId = body.member?.user?.id || body.user?.id;
-            const discordUserName = body.member?.user?.global_name || body.member?.user?.username || "Joueur";
-
-            if (!discordUserId) {
-                return NextResponse.json({
-                    type: 4,
-                    data: {
-                        content: "❌ Impossible de t'identifier (Discord ID manquant).",
-                        flags: 64 // Ephemeral (Visible only to user)
-                    }
-                });
-            }
-
-            // Parse Action: accept_call:<callId> or decline_call:<callId>
             const [action, callId] = customId.split(":");
 
-            if (!callId) {
-                return NextResponse.json({ type: 4, data: { content: "❌ Erreur interne (Call ID invalide).", flags: 64 } });
+            if (!discordUserId || !callId) {
+                return NextResponse.json({ type: 4, data: { content: "❌ Erreur interne.", flags: 64 } });
             }
 
-            // Find User in DB linked to this Discord ID
+            // Identify User
             const userAccount = await prisma.account.findFirst({
-                where: {
-                    provider: 'discord',
-                    providerAccountId: discordUserId
-                },
+                where: { provider: 'discord', providerAccountId: discordUserId },
                 include: { user: true }
             });
 
             if (!userAccount) {
-                return NextResponse.json({
-                    type: 4,
-                    data: {
-                        content: "🚫 Tu dois t'être déjà connecté au moins une fois sur le site PlaniFive pour participer !",
-                        flags: 64
-                    }
-                });
+                return NextResponse.json({ type: 4, data: { content: "🚫 Connecte-toi d'abord sur le site !", flags: 64 } });
             }
 
             const userId = userAccount.userId;
 
-            // Handle Logic
-            if (action === "accept_call") {
-                await prisma.callResponse.upsert({
-                    where: { callId_userId: { callId, userId } },
-                    create: { callId, userId, status: "ACCEPTED" },
-                    update: { status: "ACCEPTED" }
-                });
+            // --- CANCEL ACTION ---
+            if (action === "cancel_call") {
+                const call = await prisma.call.findUnique({ where: { id: callId } });
+                if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
+
+                if (call.creatorId !== userId) {
+                    return NextResponse.json({ type: 4, data: { content: "❌ Seul le créateur peut annuler l'appel.", flags: 64 } });
+                }
+
+                await prisma.call.delete({ where: { id: callId } });
 
                 return NextResponse.json({
-                    type: 4, // Update Response
+                    type: 7, // Update Message
                     data: {
-                        content: `✅ **${discordUserName}** a confirmé sa présence ! (via Discord)`,
-                        // We could potentially update the Embed here, but it's complex.
-                        // A simple message is safer for now.
-                    }
-                });
-            } else if (action === "decline_call") {
-                await prisma.callResponse.upsert({
-                    where: { callId_userId: { callId, userId } },
-                    create: { callId, userId, status: "DECLINED" },
-                    update: { status: "DECLINED" }
-                });
-
-                return NextResponse.json({
-                    type: 4,
-                    data: {
-                        content: `❌ **${discordUserName}** ne sera pas là.`,
+                        embeds: [{
+                            title: "❌ APPEL ANNULÉ",
+                            description: `L'appel a été annulé par **${userAccount.user.name ?? "le créateur"}**.`,
+                            color: 15548997 // Red
+                        }],
+                        components: [] // Remove buttons
                     }
                 });
             }
+
+            // --- PARTICIPATION ACTION ---
+            const call = await prisma.call.findUnique({ where: { id: callId } });
+            if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
+
+            // Prevent Creator from declining
+            if (action === "decline_call" && call.creatorId === userId) {
+                return NextResponse.json({ type: 4, data: { content: "❌ Le créateur ne peut pas refuser son propre appel (Annule-le plutôt !).", flags: 64 } });
+            }
+
+            const status = action === "accept_call" ? "ACCEPTED" : "DECLINED";
+
+            await prisma.callResponse.upsert({
+                where: { callId_userId: { callId, userId } },
+                create: { callId, userId, status },
+                update: { status }
+            });
+
+            // Re-calculate Embed with fresh data
+            const newEmbed = await getUpdatedEmbed(callId);
+
+            if (!newEmbed) return NextResponse.json({ type: 4, data: { content: "Erreur mise à jour.", flags: 64 } });
+
+            // Return Type 7 (Update Message) to refresh the Embed in place
+            return NextResponse.json({
+                type: 7,
+                data: {
+                    embeds: [newEmbed]
+                    // We keep the components (Buttons) as is, so no need to send them again unless we want to change them
+                }
+            });
         }
 
         return NextResponse.json({ error: "Unknown Type" }, { status: 400 });

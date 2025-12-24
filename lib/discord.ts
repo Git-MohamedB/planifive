@@ -21,10 +21,12 @@ export async function sendDiscordWebhook(embed: any, content?: string, component
 
             if (!response.ok) {
                 console.error("❌ Failed to send Discord message via Bot:", await response.text());
+                return null;
             } else {
-                console.log("✅ Discord message sent via Bot");
+                const data = await response.json();
+                console.log("✅ Discord message sent via Bot", data.id);
+                return data.id; // Return Message ID
             }
-            return;
         } catch (error) {
             console.error("❌ Error sending Discord message via Bot:", error);
             // Fallback to webhook not really possible if we don't know if the webhook is for the same channel, but usually we just log error.

@@ -90,6 +90,7 @@ export async function POST(req: Request) {
         };
 
         // Create Buttons (ActionRow)
+        // Create Buttons (ActionRow)
         const components = [
             {
                 type: 1, // Action Row
@@ -105,12 +106,25 @@ export async function POST(req: Request) {
                         style: 4, // Danger (Red)
                         label: "Je passe ❌",
                         custom_id: `decline_call:${call.id}`
+                    },
+                    {
+                        type: 2, // Button
+                        style: 2, // Secondary (Grey)
+                        label: "Annuler l'appel 🗑️",
+                        custom_id: `cancel_call:${call.id}`
                     }
                 ]
             }
         ];
 
-        await sendDiscordWebhook(embed, "@everyone 📢 NOUVEL APPEL !", components);
+        const msgId = await sendDiscordWebhook(embed, "@everyone 📢 NOUVEL APPEL !", components);
+
+        if (msgId) {
+            await prisma.call.update({
+                where: { id: call.id },
+                data: { discordMessageId: msgId }
+            });
+        }
 
         return NextResponse.json({ success: true, call });
     } catch (error) {

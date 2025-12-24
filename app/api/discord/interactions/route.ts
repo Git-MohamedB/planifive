@@ -187,42 +187,47 @@ export async function POST(req: Request) {
                 });
             }
 
+            // ... inside POST ...
+
             // --- PARTICIPATION ACTION ---
             const call = await prisma.call.findUnique({ where: { id: callId } });
             if (!call) return NextResponse.json({ type: 4, data: { content: "L'appel n'existe plus.", flags: 64 } });
 
-            // Prevent Creator from declining
-            if (action === "decline_call" && call.creatorId === userId) {
-                return NextResponse.json({ type: 4, data: { content: "❌ Le créateur ne peut pas refuser son propre appel (Annule-le plutôt !).", flags: 64 } });
-            }
+            // ... checks ...
 
-            const status = action === "accept_call" ? "ACCEPTED" : "DECLINED";
+            try {
+                const status = action === "accept_call" ? "ACCEPTED" : "DECLINED";
 
-            await prisma.callResponse.upsert({
-                where: { callId_userId: { callId, userId } },
-                create: { callId, userId, status },
-                update: { status }
-            });
+                await prisma.callResponse.upsert({
+                    where: { callId_userId: { callId, userId } },
+                    create: { callId, userId, status },
+                    update: { status }
+                });
 
-            // Re-calculate Embed with fresh data
-            const newEmbed = await getUpdatedEmbed(callId);
+                // Re-calculate Embed with fresh data
+                const newEmbed = await getUpdatedEmbed(callId);
 
-            if (!newEmbed) return NextResponse.json({ type: 4, data: { content: "Erreur mise à jour.", flags: 64 } });
-
-            // Return Type 7 (Update Message) to refresh the Embed in place
-            return NextResponse.json({
-                type: 7,
-                data: {
-                    embeds: [newEmbed]
-                    // We keep the components (Buttons) as is, so no need to send them again unless we want to change them
+                if (!newEmbed) {
+                    console.error("Failed to generate updated embed");
+                    return NextResponse.json({ type: 4, data: { content: "Erreur lors de la mise à jour de l'affichage.", flags: 64 } });
                 }
-            });
+
+                return NextResponse.json({
+                    type: 7,
+                    data: {
+                        embeds: [newEmbed]
+                    }
+                });
+            } catch (innerError) {
+                console.error("Error processing participation:", innerError);
+                return NextResponse.json({ type: 4, data: { content: "Une erreur interne est survenue.", flags: 64 } });
+            }
         }
 
         return NextResponse.json({ error: "Unknown Type" }, { status: 400 });
 
     } catch (error) {
-        console.error("Interaction Error:", error);
+        console.error("Interaction Error (Top Level):", error); // Log the actual error
         return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
 }

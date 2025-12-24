@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import nacl from "tweetnacl";
+import { waitUntil } from "@vercel/functions";
 
 const prisma = new PrismaClient();
 const PUB_KEY = process.env.DISCORD_PUBLIC_KEY;
@@ -47,25 +48,27 @@ export async function POST(req: Request) {
                 return NextResponse.json({ type: 4, data: { content: "🚫 Connecte-toi sur le site d'abord !", flags: 64 } });
             }
 
-            // 2. Delegate to Worker (Fire and Forget)
+            // 2. Delegate to Worker (Fire and Forget with waitUntil)
             const domain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "localhost:3000";
             const protocol = domain.includes("localhost") ? "http" : "https";
             const baseUrl = `${protocol}://${domain}`;
 
             console.log(`[Interactions] Delegating to worker at ${baseUrl}/api/discord/worker`);
 
-            // Fire worker without awaiting
-            fetch(`${baseUrl}/api/discord/worker`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action,
-                    callId,
-                    userId: userAccount.userId,
-                    token,
-                    userAccountName: userAccount.user.name
-                })
-            }).catch(e => console.error(`Failed to spawn worker at ${baseUrl}`, e));
+            // Fire worker and keep lambda alive until request sends
+            waitUntil(
+                fetch(`${baseUrl}/api/discord/worker`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action,
+                        callId,
+                        userId: userAccount.userId,
+                        token,
+                        userAccountName: userAccount.user.name
+                    })
+                }).catch(e => console.error(`Failed to spawn worker at ${baseUrl}`, e))
+            );
 
             // 3. Immediate Response (Deferred Update)
             return NextResponse.json({ type: 6 });

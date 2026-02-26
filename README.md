@@ -33,14 +33,14 @@ Voici quelques captures d'écran illustrant les différentes fonctionnalités de
 
 ## Fonctionnalités Principales
 
-* ** Planification & Votes** : Système interactif permettant aux joueurs de voter pour leurs créneaux de disponibilité.
-* ** Écosystème Connecté (Discord)** :
+* **Planification & Votes** : Système interactif permettant aux joueurs de voter pour leurs créneaux de disponibilité.
+* **Écosystème Connecté (Discord)** :
     * Notifications automatiques des nouveaux sondages.
     * Rappels de vote via bot Discord personnalisé.
     * Synchronisation des avatars utilisateurs Discord <-> App.
-* ** Gamification** : Leaderboard dynamique suivant les performances et l'assiduité des joueurs.
-* ** Automatisation** : Tâches planifiées (CRON) pour la clôture des votes et l'envoi de rappels.
-* ** Sécurité** : Authentification robuste via NextAuth.
+* **Gamification** : Leaderboard dynamique suivant les performances et l'assiduité des joueurs.
+* **Automatisation** : Tâches planifiées (CRON) pour la clôture des votes et l'envoi de rappels.
+* **Sécurité** : Authentification robuste via NextAuth.
 
 ## Stack Technique
 

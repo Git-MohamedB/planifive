@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 
-const prisma = new PrismaClient();
-
-const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
-
-// UPDATE (Soft Ban / Rename)
+// UPDATE (Soft Ban / Rename / Skills)
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -15,7 +11,7 @@ export async function PATCH(
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session || !session.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+        if (!session || !session.user?.email || !isAdmin(session.user.email)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
@@ -28,10 +24,12 @@ export async function PATCH(
 
         const body = await req.json();
 
-        // We allow updating customName OR isBanned
+        // We allow updating customName, isBanned, technique, cardio
         const dataToUpdate: any = {};
         if (typeof body.customName !== 'undefined') dataToUpdate.customName = body.customName;
         if (typeof body.isBanned !== 'undefined') dataToUpdate.isBanned = body.isBanned;
+        if (typeof body.technique !== 'undefined') dataToUpdate.technique = body.technique !== null ? parseFloat(body.technique) : null;
+        if (typeof body.cardio !== 'undefined') dataToUpdate.cardio = body.cardio !== null ? parseFloat(body.cardio) : null;
 
         const updatedUser = await prisma.user.update({
             where: { id },

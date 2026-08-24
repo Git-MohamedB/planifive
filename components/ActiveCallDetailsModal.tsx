@@ -1,24 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check, XCircle, MapPin, Clock, User as UserIcon, Trash2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { X, Check, XCircle, MapPin, Clock, User as UserIcon, Trash2, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
 
 import ConfirmModal from "./ConfirmModal";
+import { getLeFiveBookingInfo } from "@/lib/lefive";
 
 interface ActiveCallDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     call: any; // The call object from PlanningGrid
     onResponseUpdate?: () => void; // Callback to refresh grid/call data
-    implicitAttendees?: any[]; // Users present in the 4h slots
+    implicitAttendees?: any[]; // Users present in the slots
 }
 
 export default function ActiveCallDetailsModal({ isOpen, onClose, call, onResponseUpdate, implicitAttendees = [] }: ActiveCallDetailsModalProps) {
-    // Forced update to trigger hot reload
-    if (isOpen) console.log("🟣 [MODAL] Render ActiveCallDetailsModal. IsOpen:", isOpen, "Call:", call?.id);
     const { data: session } = useSession();
     const [loading, setLoading] = useState(false);
     const [responses, setResponses] = useState<{ accepted: any[], declined: any[] }>({ accepted: [], declined: [] });
@@ -34,7 +32,6 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
     const fetchResponses = async () => {
         try {
-            // Temporary: Fetch fresh call data with responses
             const res = await fetch(`/api/calls?id=${call.id}`);
             if (res.ok) {
                 const fullCall = await res.json();
@@ -44,24 +41,19 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
     };
 
     const processResponses = (responsesList: any[]) => {
-        // 1. Identify Explicit Actions
         const explicitAccepted = responsesList.filter((r: any) => r.status === "ACCEPTED");
         const explicitDeclined = responsesList.filter((r: any) => r.status === "DECLINED");
         const declinedIds = new Set(explicitDeclined.map((r: any) => r.userId));
         const acceptedIds = new Set(explicitAccepted.map((r: any) => r.userId));
 
-        // 2. Build Final Accepted List
-        // Start with Explicit Accepted
         let finalAccepted = explicitAccepted.map((r: any) => r.user);
 
-        // Add Implicit Attendees (if not explicitly declined AND not already added)
         implicitAttendees?.forEach(user => {
             if (!declinedIds.has(user.id) && !acceptedIds.has(user.id)) {
                 finalAccepted.push({ ...user, isImplicit: true });
             }
         });
 
-        // 3. Build Final Declined List (Just explicit declines)
         const finalDeclined = explicitDeclined.map((r: any) => r.user);
 
         setResponses({ accepted: finalAccepted, declined: finalDeclined });
@@ -92,7 +84,6 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
     };
 
     const handleRespond = async (status: "ACCEPTED" | "DECLINED") => {
-        // If Creator clicks Decline -> Trigger Delete
         if (status === "DECLINED" && isCreator) {
             handleDeleteClick();
             return;
@@ -100,7 +91,6 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
         setLoading(true);
         try {
-            // 1. Send Response Status
             const res = await fetch("/api/calls/respond", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -115,7 +105,6 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
         setLoading(false);
     };
 
-    // Use Portal to ensure it sits on top of everything
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setMounted(true);
@@ -124,6 +113,14 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
 
     if (!isOpen || !call || !mounted) return null;
     if (typeof window === 'undefined') return null;
+
+    const formatCallTimeRange = () => {
+        const start = call.hour;
+        if (call.duration === 90) {
+            return `${start}h00 - ${start + 1}h30`;
+        }
+        return `${start}h00 - ${start + 1}h00`;
+    };
 
     const modalContent = (
         <>
@@ -134,135 +131,311 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.82)',
                     zIndex: 9999999,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    padding: '1rem',
                 }}
                 onClick={onClose}
             >
                 <div
                     style={{
-                        background: 'linear-gradient(to bottom right, #1A1A1A, #0F0F0F)',
-                        borderRadius: '32px',
-                        border: '1px solid #333',
-                        maxWidth: '50rem', // Wider than confirm modal to fit 2 cols
-                        width: '90%',
+                        background: "#121212",
+                        borderRadius: '20px',
+                        border: '1px solid #282828',
+                        maxWidth: '48rem',
+                        width: '95%',
                         maxHeight: '85vh',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+                        boxShadow: '0 30px 80px rgba(0, 0, 0, 0.85)',
                         display: 'flex',
                         flexDirection: 'column',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        position: 'relative'
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     <div style={{
-                        background: 'linear-gradient(to bottom right, #222, #181818)',
-                        padding: '1.5rem',
-                        borderBottom: '1px solid #333',
+                        padding: '1.25rem 1.5rem',
+                        borderBottom: '1px solid #222222',
+                        background: '#121212'
                     }}>
-                        <div className="flex justify-between items-start">
-                            <div className="flex flex-col gap-3">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {/* 1. Time */}
-                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300">
-                                    <Clock size={16} />
-                                    <span>{call.hour}H - {call.hour + (call.duration === 90 ? 5 : 4)}H00</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#FFFFFF', fontWeight: 700 }}>
+                                    <Clock size={15} color="#38BDF8" />
+                                    <span>{formatCallTimeRange()}</span>
                                 </div>
 
                                 {/* 2. Creator */}
-                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300">
-                                    <UserIcon size={16} />
-                                    <span>PAR {call.creator?.name || "???"}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#FFFFFF', fontWeight: 600 }}>
+                                    <UserIcon size={15} color="#94A3B8" />
+                                    <span>Lancé par <strong style={{ color: '#FFFFFF' }}>{call.creator?.name || "???"}</strong></span>
                                 </div>
 
                                 {/* 3. Location */}
-                                <div className="flex items-center gap-3 text-sm font-bold text-gray-300">
-                                    <MapPin size={16} />
-                                    <span>{call.location}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '13px', color: '#FFFFFF', fontWeight: 600 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <MapPin size={15} color="#94A3B8" />
+                                        <span>{call.location}</span>
+                                    </div>
+                                    {(() => {
+                                        const bookingInfo = getLeFiveBookingInfo(call.location);
+                                        return (
+                                            <a
+                                                href={bookingInfo.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px',
+                                                    padding: '3px 9px',
+                                                    borderRadius: '8px',
+                                                    background: 'rgba(56, 189, 248, 0.12)',
+                                                    border: '1px solid rgba(56, 189, 248, 0.28)',
+                                                    color: '#38BDF8',
+                                                    fontSize: '11px',
+                                                    fontWeight: 700,
+                                                    textDecoration: 'none',
+                                                    transition: 'all 0.15s ease'
+                                                }}
+                                                className="hover:bg-[#38BDF8]/20"
+                                                title="Ouvrir la réservation sur le site officiel Le Five"
+                                            >
+                                                <span>Réserver sur Le Five</span>
+                                                <ExternalLink size={11} />
+                                            </a>
+                                        );
+                                    })()}
                                 </div>
                             </div>
 
-                            {/* Close/Delete */}
-                            <div className="flex items-center gap-2">
+                            {/* Actions Header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {isCreator && (
                                     <button
                                         onClick={handleDeleteClick}
-                                        className="cursor-pointer p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.12)',
+                                            border: '1px solid rgba(239, 68, 68, 0.30)',
+                                            color: '#EF4444',
+                                            padding: '8px',
+                                            borderRadius: '10px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.15s ease'
+                                        }}
                                         title="Supprimer l'appel"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} />
                                     </button>
                                 )}
                                 <button
                                     onClick={onClose}
-                                    className="cursor-pointer p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                                    style={{
+                                        background: '#1a1a1a',
+                                        border: '1px solid #2e2e2e',
+                                        color: '#A1A1AA',
+                                        padding: '8px',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#FFFFFF';
+                                        e.currentTarget.style.background = '#282828';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#A1A1AA';
+                                        e.currentTarget.style.background = '#1a1a1a';
+                                    }}
                                 >
-                                    <X size={18} />
+                                    <X size={16} />
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     {/* Content: 2 Columns */}
-                    <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-8">
+                    <div style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        padding: '1.25rem 1.5rem',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '16px',
+                        background: '#121212'
+                    }}>
 
                         {/* Left: ACCEPTS */}
-                        <div className="bg-[#141414] rounded-3xl p-5 border border-[#1f1f1f] flex flex-col h-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
-                            <div className="mb-4 pb-2 border-b border-[#222]">
-                                <h3 className="text-green-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Check size={13} /> Présents ({responses.accepted.length})
-                                </h3>
+                        <div style={{
+                            background: '#181818',
+                            borderRadius: '16px',
+                            padding: '14px',
+                            border: '1px solid #282828',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: '220px'
+                        }}>
+                            <div style={{
+                                marginBottom: '12px',
+                                paddingBottom: '8px',
+                                borderBottom: '1px solid #242424',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <Check size={14} color="#22C55E" />
+                                <span style={{
+                                    color: '#22C55E',
+                                    fontWeight: 800,
+                                    fontSize: '11px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    Présents ({responses.accepted.length})
+                                </span>
                             </div>
 
-                            <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '260px' }} className="custom-scrollbar">
                                 {responses.accepted.map((u: any, idx) => (
-                                    <div key={idx} className="flex items-center gap-8 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors group">
-                                        <div style={{ width: '48px', height: '48px', minWidth: '48px' }} className="rounded-full bg-gray-800 overflow-hidden shrink-0 ring-1 ring-[#333]">
-                                            {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
+                                    <div key={idx} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '7px 10px',
+                                        borderRadius: '10px',
+                                        background: '#202020',
+                                        border: '1px solid #2a2a2a'
+                                    }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            minWidth: '32px',
+                                            borderRadius: '50%',
+                                            background: '#282828',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            overflow: 'hidden',
+                                            border: '1px solid #383838'
+                                        }}>
+                                            {u.image ? (
+                                                <img src={u.image} alt={u.name || "Joueur"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <span style={{ color: '#FFFFFF', fontSize: '12px', fontWeight: 800 }}>
+                                                    {u.name ? u.name[0].toUpperCase() : "?"}
+                                                </span>
+                                            )}
                                         </div>
-                                        <span className="text-gray-400 group-hover:text-gray-200 text-sm font-medium truncate flex-1 transition-colors">
+                                        <span style={{ color: '#FFFFFF', fontSize: '13px', fontWeight: 600, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {u.name}
                                         </span>
                                         {u.isImplicit && (
-                                            <span className="text-[9px] text-[#1ED760] font-bold opacity-70">
-                                                (DISPO)
+                                            <span style={{
+                                                fontSize: '9px',
+                                                color: '#22C55E',
+                                                fontWeight: 800,
+                                                padding: '2px 6px',
+                                                borderRadius: '6px',
+                                                background: 'rgba(34, 197, 94, 0.12)',
+                                                border: '1px solid rgba(34, 197, 94, 0.25)',
+                                                letterSpacing: '0.05em'
+                                            }}>
+                                                DISPO
                                             </span>
                                         )}
                                     </div>
                                 ))}
                                 {responses.accepted.length === 0 && (
-                                    <div className="text-gray-700 italic text-[10px] text-center py-8">
-                                        En attente...
+                                    <div style={{ color: 'rgba(255, 255, 255, 0.35)', fontStyle: 'italic', fontSize: '11px', textAlign: 'center', padding: '30px 0' }}>
+                                        En attente de réponses...
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Right: REFUSALS */}
-                        <div className="bg-[#141414] rounded-3xl p-5 border border-[#1f1f1f] flex flex-col h-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
-                            <div className="mb-4 pb-2 border-b border-[#222]">
-                                <h3 className="text-red-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <XCircle size={14} /> Absents ({responses.declined.length})
-                                </h3>
+                        <div style={{
+                            background: '#181818',
+                            borderRadius: '16px',
+                            padding: '14px',
+                            border: '1px solid #282828',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: '220px'
+                        }}>
+                            <div style={{
+                                marginBottom: '12px',
+                                paddingBottom: '8px',
+                                borderBottom: '1px solid #242424',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <XCircle size={14} color="#EF4444" />
+                                <span style={{
+                                    color: '#EF4444',
+                                    fontWeight: 800,
+                                    fontSize: '11px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    Absents ({responses.declined.length})
+                                </span>
                             </div>
 
-                            <div className="space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '260px' }} className="custom-scrollbar">
                                 {responses.declined.map((u: any, idx) => (
-                                    <div key={idx} className="flex items-center gap-8 p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-colors opacity-50 hover:opacity-100 group">
-                                        <div style={{ width: '48px', height: '48px', minWidth: '48px' }} className="rounded-full bg-gray-800 overflow-hidden shrink-0 grayscale ring-1 ring-[#333]">
-                                            {u.image ? <img src={u.image} className="w-full h-full object-cover" /> : null}
+                                    <div key={idx} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '7px 10px',
+                                        borderRadius: '10px',
+                                        background: '#202020',
+                                        border: '1px solid #2a2a2a',
+                                        opacity: 0.65
+                                    }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            minWidth: '32px',
+                                            borderRadius: '50%',
+                                            background: '#282828',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            overflow: 'hidden',
+                                            border: '1px solid #383838'
+                                        }}>
+                                            {u.image ? (
+                                                <img src={u.image} alt={u.name || "Joueur"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px', fontWeight: 800 }}>
+                                                    {u.name ? u.name[0].toUpperCase() : "?"}
+                                                </span>
+                                            )}
                                         </div>
-                                        <span className="text-gray-500 group-hover:text-gray-400 text-sm font-medium line-through decoration-red-900 truncate">
+                                        <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '13px', fontWeight: 600, textDecoration: 'line-through', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {u.name}
                                         </span>
                                     </div>
                                 ))}
                                 {responses.declined.length === 0 && (
-                                    <div className="text-gray-700 italic text-[10px] text-center py-8">
-                                        Personne
+                                    <div style={{ color: 'rgba(255, 255, 255, 0.35)', fontStyle: 'italic', fontSize: '11px', textAlign: 'center', padding: '30px 0' }}>
+                                        Aucun refus
                                     </div>
                                 )}
                             </div>
@@ -270,34 +443,66 @@ export default function ActiveCallDetailsModal({ isOpen, onClose, call, onRespon
                     </div>
 
                     {/* Footer: Actions */}
-                    <div className="px-8 py-8 bg-gradient-to-t from-[#0a0a0a] to-[#0F0F0F] border-t border-[#1f1f1f] flex justify-center items-center">
+                    <div style={{
+                        padding: '1.25rem 1.5rem',
+                        borderTop: '1px solid #222222',
+                        background: '#121212',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '16px'
+                    }}>
                         <button
                             onClick={() => handleRespond("ACCEPTED")}
                             disabled={loading}
-                            style={{ width: '160px', height: '40px' }}
-                            className={`!cursor-pointer relative z-10 shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "ACCEPTED"
-                                ? "bg-[#132e13] text-green-500 border border-green-900/50"
-                                : "bg-[#1ED760] text-black hover:bg-[#1fdf64] hover:scale-105 hover:shadow-[0_0_30px_rgba(30,215,96,0.5)]"
-                                }`}
+                            style={{
+                                width: '160px',
+                                height: '42px',
+                                borderRadius: '12px',
+                                fontWeight: 800,
+                                fontSize: '12px',
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                transition: 'all 0.15s ease',
+                                background: myStatus === "ACCEPTED" ? 'rgba(34, 197, 94, 0.20)' : '#22C55E',
+                                color: myStatus === "ACCEPTED" ? '#22C55E' : '#000000',
+                                border: myStatus === "ACCEPTED" ? '1px solid rgba(34, 197, 94, 0.50)' : 'none',
+                                boxShadow: myStatus === "ACCEPTED" ? 'none' : '0 4px 16px rgba(34, 197, 94, 0.30)'
+                            }}
                         >
-                            {myStatus === "ACCEPTED" ? <Check size={16} strokeWidth={3} /> : null}
-                            {myStatus === "ACCEPTED" ? "PRÉSENT" : "ACCEPTER"}
+                            <Check size={16} strokeWidth={3} />
+                            <span>{myStatus === "ACCEPTED" ? "PRÉSENT" : "ACCEPTER"}</span>
                         </button>
-
-                        {/* Manual Spacer for guaranteed gap */}
-                        <div style={{ width: '48px' }} className="shrink-0"></div>
 
                         <button
                             onClick={() => handleRespond("DECLINED")}
                             disabled={loading}
-                            style={{ width: '160px', height: '40px' }}
-                            className={`!cursor-pointer relative z-10 shrink-0 rounded-full font-black text-xs tracking-[0.1em] uppercase transition-all flex items-center justify-center gap-2 shadow-2xl ${myStatus === "DECLINED"
-                                ? "bg-[#991b1b] text-red-200 border border-red-900/50 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
-                                : "bg-red-600 text-white hover:bg-red-400 hover:scale-105 hover:shadow-[0_0_30px_rgba(220,38,38,0.8)]"
-                                }`}
+                            style={{
+                                width: '160px',
+                                height: '42px',
+                                borderRadius: '12px',
+                                fontWeight: 800,
+                                fontSize: '12px',
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                transition: 'all 0.15s ease',
+                                background: myStatus === "DECLINED" ? 'rgba(239, 68, 68, 0.20)' : '#1a1a1a',
+                                color: myStatus === "DECLINED" ? '#EF4444' : '#F87171',
+                                border: myStatus === "DECLINED" ? '1px solid rgba(239, 68, 68, 0.50)' : '1px solid #2e2e2e'
+                            }}
                         >
-                            {myStatus === "DECLINED" ? <X size={16} strokeWidth={3} /> : null}
-                            {myStatus === "DECLINED" ? "REFUSER" : "REFUSER"}
+                            <X size={16} strokeWidth={3} />
+                            <span>{myStatus === "DECLINED" ? "REFUSÉ" : "REFUSER"}</span>
                         </button>
                     </div>
                 </div>

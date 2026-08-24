@@ -46,6 +46,10 @@ model User {
   image         String?   // Avatar Discord/Google
   customName    String?   // Prénom personnalisé défini par l'admin
   isBanned      Boolean   @default(false)
+  accentColor   String?   @default("#22C55E")
+  skillLevel    Int?      @default(5) // 1-10 level for balanced team generation
+  technique     Float?    // Niveau technique/foot (0-5)
+  cardio        Float?    // Cardio/Intensité (0-5)
 
   accounts      Account[]
   sessions      Session[]
@@ -59,6 +63,8 @@ model User {
   
   calls        Call[]
   callResponses CallResponse[]
+  comments     SlotComment[]
+  notifications Notification[]
 }
 
 model Match {
@@ -71,6 +77,10 @@ model Match {
   // Noms des joueurs personnalisés (JSON)
   team1Names String?
   team2Names String?
+
+  // Système de votes MVP (JSON map userId -> playerName)
+  mvpVotes   String?
+  mvpWinner  String?
 
   team1     User[]   @relation("Team1")
   team2     User[]   @relation("Team2")
@@ -167,4 +177,65 @@ model SlotStatus {
   isGoldenNotified Boolean @default(false)
 
   @@unique([date, hour])
+}
+
+// ==========================================
+// 5. Commentaires et Réactions sur les créneaux
+// ==========================================
+
+model SlotComment {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  hour      Int
+  type      String   @default("COMMENT") // "CERTAIN", "MAYBE", "COMMENT"
+  message   String?  // Texte pour le commentaire
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([date, hour])
+}
+
+// ==========================================
+// 6. Notifications In-App
+// ==========================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "SLOT_FULL", "CALL_CREATED", "MATCH_RECORDED", "DISPO_REMINDER"
+  title     String
+  message   String
+  link      String?  // URL de redirection au clic
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// ==========================================
+// 7. Notations Communautaires des Cartes FUT
+// ==========================================
+
+model FUTCardRating {
+  id           String   @id @default(cuid())
+  targetUserId String   // ID ou nom du joueur noté (ex: David)
+  voterUserId  String   // ID du joueur votant
+  voterName    String?  // Nom du votant
+
+  pac          Int      @default(75) // Vitesse / Rythme
+  sho          Int      @default(75) // Frappe / Finition
+  pas          Int      @default(75) // Passe / Vision
+  dri          Int      @default(75) // Dribble / Technique
+  def          Int      @default(75) // Défense / Solidité
+  phy          Int      @default(75) // Physique / Cardio
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([targetUserId, voterUserId])
+  @@index([targetUserId])
 }

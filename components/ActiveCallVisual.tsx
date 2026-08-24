@@ -1,31 +1,50 @@
 import React from 'react';
 
 interface ActiveCallVisualProps {
-    isSelected: boolean;
+    isSelected?: boolean;
+    variant?: 'call' | 'gold';
 }
 
-const ActiveCallVisual = ({ isSelected }: ActiveCallVisualProps) => {
-    return (
-        <>
-            {/* Layer 1: Rotating Gradient (The Border) */}
-            <div className="absolute top-0 left-0 w-full h-full z-0 overflow-hidden rounded-[inherit] pointer-events-none">
-                <div
-                    className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_3s_linear_infinite]"
-                    style={{
-                        background: 'conic-gradient(from 0deg, transparent 0 60%, #5865F2 80%, #00C7FF 95%, #5865F2 100%)'
-                    }}
-                />
-            </div>
+const ActiveCallVisual = ({ isSelected = false, variant = 'call' }: ActiveCallVisualProps) => {
+    const isGold = variant === 'gold';
+    const gradId = isGold ? 'goldBorderGrad' : 'blueBorderGrad';
 
-            {/* Layer 2: Inner Background (The Mask) */}
-            <div
-                className="absolute z-1 transition-colors duration-200 rounded-[inherit]"
+    return (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
+            <defs>
+                <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="50%" stopColor={isGold ? '#FDE047' : '#00C7FF'} />
+                    <stop offset="100%" stopColor={isGold ? '#EAB308' : '#5865F2'} />
+                </linearGradient>
+            </defs>
+
+            {/* Base clean border */}
+            <rect
+                x="1"
+                y="1"
+                width="calc(100% - 2px)"
+                height="calc(100% - 2px)"
+                fill="none"
+                stroke={isGold ? 'rgba(234, 179, 8, 0.45)' : 'rgba(88, 101, 242, 0.45)'}
+                strokeWidth="2"
+            />
+
+            {/* Animated traveling border highlight */}
+            <rect
+                x="1"
+                y="1"
+                width="calc(100% - 2px)"
+                height="calc(100% - 2px)"
+                fill="none"
+                stroke={`url(#${gradId})`}
+                strokeWidth="2.5"
+                strokeDasharray="60 140"
                 style={{
-                    top: '3px', bottom: '3px', left: '3px', right: '3px',
-                    backgroundColor: isSelected ? '#22c55e' : '#1A1A1A',
+                    animation: 'borderTravel 2s linear infinite',
                 }}
             />
-        </>
+        </svg>
     );
 };
 

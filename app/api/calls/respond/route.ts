@@ -52,9 +52,9 @@ export async function POST(req: Request) {
                 console.log("🟢 [API] Call found:", call);
                 const hoursToAdd = [];
                 const duration = call.duration || 60;
-                // Logic: 60 min -> 4 slots (h, h+1, h+2, h+3)
-                // Logic: 90 min -> 5 slots (h, h+1, h+2, h+3, h+4)
-                const slotsCount = duration === 90 ? 5 : 4;
+                // Logic: 60 min -> 1 slot (h)
+                // Logic: 90 min -> 2 slots (h, h+1)
+                const slotsCount = duration === 90 ? 2 : 1;
 
                 console.log(`🔵 [API] Duration: ${duration}, Slots: ${slotsCount}`);
 
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
 
             if (call) {
                 const duration = call.duration || 60;
-                const slotsCount = duration === 90 ? 5 : 4;
+                const slotsCount = duration === 90 ? 2 : 1;
                 const hoursToRemove = [];
                 for (let i = 0; i < slotsCount; i++) {
                     hoursToRemove.push(call.hour + i);

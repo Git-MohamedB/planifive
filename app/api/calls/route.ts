@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
 import { sendDiscordWebhook } from "@/lib/discord";
 
 export async function POST(req: Request) {
@@ -16,15 +16,50 @@ export async function POST(req: Request) {
     const { date, hour, location, duration = 60, price, comment } = await req.json();
 
     if (!date || hour === undefined || !location) {
-        return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+        return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 });
     }
 
     try {
-        // Logic: 1h -> 4 slots (h, h+1, h+2, h+3) | 1h30 -> 5 slots (h, h+1, h+2, h+3, h+4)
-        const slotsCount = duration === 90 ? 5 : 4;
+        // 1. Anti-Spam / Anti-Raid Protection (2-minute cooldown per user)
+        const COOLDOWN_SECONDS = 120;
+        const lastUserCall = await prisma.call.findFirst({
+            where: {
+                creatorId: user.id,
+                createdAt: {
+                    gte: new Date(Date.now() - COOLDOWN_SECONDS * 1000)
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (lastUserCall) {
+            const elapsedMs = Date.now() - new Date(lastUserCall.createdAt).getTime();
+            const remainingSeconds = Math.max(1, Math.ceil((COOLDOWN_SECONDS * 1000 - elapsedMs) / 1000));
+            return NextResponse.json({
+                error: `Protection anti-spam active : veuillez patienter encore ${remainingSeconds} seconde(s) avant de lancer un nouvel appel.`,
+                remainingSeconds
+            }, { status: 429 });
+        }
+
+        // 2. Prevent duplicate calls on same date & hour
+        const existingCallOnSlot = await prisma.call.findFirst({
+            where: {
+                date: new Date(date),
+                hour: parseInt(hour)
+            }
+        });
+
+        if (existingCallOnSlot) {
+            return NextResponse.json({
+                error: "Un appel est déjà en cours sur ce créneau horaire."
+            }, { status: 400 });
+        }
+
+        // Logic: 1h -> 1 slot (h) | 1h30 -> 2 slots (h, h+1)
+        const slotsCount = parseInt(duration) === 90 ? 2 : 1;
         const slots = Array.from({ length: slotsCount }, (_, i) => parseInt(hour) + i);
 
-        // 1. Create Call in DB
+        // 3. Create Call in DB
         const call = await prisma.call.create({
             data: {
                 creatorId: user.id,
@@ -63,7 +98,7 @@ export async function POST(req: Request) {
         // 3. Send Discord Notification
         const dateObj = new Date(date);
         const dateStr = dateObj.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
-        const durationStr = duration === 90 ? "1h30" : "1h00";
+        const durationStr = parseInt(duration) === 90 ? "1h30" : "1h00";
 
         let description = `**${user.name || "Un joueur"}** lance un appel pour un Five !\n\n📅 **${dateStr}**\n⏰ **${hour}h00**\n⏱️ **Durée : ${durationStr}**\n📍 **${location}**`;
 
@@ -71,6 +106,10 @@ export async function POST(req: Request) {
         if (comment) description += `\n📝 **Note : ${comment}**`;
 
         description += `\n\n👉 Connectez-vous pour rejoindre !`;
+
+        const endHourText = parseInt(duration) === 90
+            ? `${(parseInt(hour) + 2) % 24 === 0 ? "00" : (parseInt(hour) + 2) % 24}h (1h30)`
+            : `${(parseInt(hour) + 1) % 24 === 0 ? "00" : (parseInt(hour) + 1) % 24}h (1h00)`;
 
         const embed = {
             title: "📢 NOUVEL APPEL FIVE !",
@@ -80,7 +119,7 @@ export async function POST(req: Request) {
             fields: [
                 {
                     name: "Créneau réservé",
-                    value: `${hour}h - ${(parseInt(hour) + slotsCount) % 24 === 0 ? "00" : (parseInt(hour) + slotsCount) % 24}h`,
+                    value: `${hour}h00 - ${endHourText}`,
                     inline: true
                 }
             ],
@@ -192,8 +231,6 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
-    const userEmail = session.user.email.toLowerCase();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -213,10 +250,10 @@ export async function DELETE(req: Request) {
         }
 
         // 2. Check permissions: Admin OR Creator
-        const isCreator = call.creator.email?.toLowerCase() === userEmail;
-        const isAdmin = ADMIN_EMAILS.includes(userEmail);
+        const isCreator = call.creator.email?.toLowerCase() === session.user.email.toLowerCase();
+        const hasAdminRights = isAdmin(session.user.email);
 
-        if (!isCreator && !isAdmin) {
+        if (!isCreator && !hasAdminRights) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 

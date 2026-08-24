@@ -6,16 +6,21 @@ import { prisma } from "./prisma";
 declare module "next-auth" {
   interface User extends DefaultUser {
     isBanned?: boolean;
+    accentColor?: string;
+    customName?: string;
   }
   interface Session {
     user: {
       id: string;
       isBanned?: boolean;
+      accentColor?: string;
+      customName?: string;
     } & DefaultSession["user"];
   }
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     DiscordProvider({
@@ -86,12 +91,20 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    jwt: async ({ token, user, account, profile }) => {
+    jwt: async ({ token, user, account, profile, trigger, session }) => {
       // Initial sign in
       if (user) {
         token.id = user.id;
         token.picture = user.image;
         token.name = user.name;
+        // @ts-ignore
+        token.accentColor = (user as any).accentColor || "#22C55E";
+        // @ts-ignore
+        token.customName = (user as any).customName || null;
+      }
+      if (trigger === "update" && session) {
+        if (session.accentColor) token.accentColor = session.accentColor;
+        if (session.customName !== undefined) token.customName = session.customName;
       }
       return token;
     },
@@ -101,8 +114,19 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.image = token.picture;
         session.user.email = token.email;
+        // @ts-ignore
+        session.user.accentColor = (token.accentColor as string) || "#22C55E";
+        // @ts-ignore
+        session.user.customName = (token.customName as string) || null;
       }
       return session;
     },
   },
 };
+
+export const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
+
+export function isAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === email.trim().toLowerCase());
+}

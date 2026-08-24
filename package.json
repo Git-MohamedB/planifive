@@ -13,8 +13,12 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.22.0",
+    "@react-three/fiber": "^9.7.0",
+    "@shadergradient/react": "^2.4.20",
     "@types/date-fns": "^2.5.3",
     "@vercel/functions": "^3.3.4",
+    "camera-controls": "^3.1.2",
+    "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
@@ -28,10 +32,13 @@
     "react-dom": "^19.2.1",
     "sass": "^1.94.2",
     "sqlite3": "^5.1.7",
+    "three": "^0.185.1",
+    "three-stdlib": "^2.36.1",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

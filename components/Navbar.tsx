@@ -1,42 +1,62 @@
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react"; // Added useState import
-import { Megaphone, Trophy, History, Shield, LogOut } from "lucide-react"; // Assuming these are from lucide-react
+import { useState } from "react";
+import { Megaphone, Trophy, History, Shield, LogOut, Menu, X, LayoutDashboard, Calendar, User } from "lucide-react";
+import PlayerCardModal from "@/components/PlayerCardModal";
 
-interface GoldenSlot {
-  day: string;
-  hour: number;
-  endHour?: number;
-  date: Date;
-  count?: number;
+export interface SlotStats {
+  max1h: number;
+  max2h: number;
+  slots1h: any[];
+  slots2h: any[];
 }
 
 interface NavbarProps {
-  goldenSlots?: GoldenSlot[];
-  potentialSlots?: GoldenSlot[];
+  stats?: SlotStats;
   title?: string;
   icon?: React.ReactNode;
   onOpenCallModal?: () => void;
 }
 
-export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpenCallModal }: NavbarProps) {
+export default function Navbar({ stats, title, icon, onOpenCallModal }: NavbarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const hideCallButton = ["/admin", "/history", "/leaderboard"].includes(pathname);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
   const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   if (!session) return null;
 
   const displayName = session?.user?.name || session?.user?.email?.split('@')[0] || "Utilisateur";
   const displayImage = session?.user?.image;
+  const userId = session?.user?.id;
 
   return (
     <>
-      <div style={{ height: '60px', background: '#121212', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: '1px solid #333', marginBottom: '12px', position: 'relative', zIndex: 2000 }}>
+      <div style={{
+        height: '62px',
+        width: '100%',
+        boxSizing: 'border-box',
+        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(14, 16, 20, 0.92) 30%, rgba(8, 10, 12, 0.98) 100%)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        border: '1px solid rgba(255, 255, 255, 0.10)',
+        borderRadius: '22px',
+        boxShadow: '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
+        position: 'relative',
+        zIndex: 2000
+      }}>
 
         {/* Left: Logo */}
         <Link href="/" className="nav-logo-hover" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit', zIndex: 10 }}>
@@ -50,212 +70,426 @@ export default function Navbar({ goldenSlots, potentialSlots, title, icon, onOpe
           <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'white' }}>Planifive</span>
         </Link>
 
-        {/* Center: Title OR Stats */}
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Center: Title OR Stats (Centered Liquid Glass Badge) */}
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 15,
+        }}>
           {title ? (
-            // Sub-page Title Mode
-            <>
+            // Sub-page Title Mode (Dashboard, Admin, History, Leaderboard)
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              padding: '6px 16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            }}>
               {icon}
-              <span style={{ fontFamily: 'var(--font-oswald)', fontSize: '20px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'white' }}>
+              <span style={{
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'white'
+              }}>
                 {title}
               </span>
-            </>
-          ) : goldenSlots ? (
-            // Home Page Stats Mode
+            </div>
+          ) : (
+            // Home Page Stats Mode (1h & 1h30)
             <div
-              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#1A1A1A', padding: '6px 14px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer' }}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                padding: '6px 14px',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
+              onClick={() => setShowTooltip(prev => !prev)}
             >
-              <span style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase' }}>Créneaux 4h</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Trophy size={13} color="#EAB308" />
-                <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{goldenSlots.length}</span>
+              {/* 1H Counter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.55)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>1H</span>
+                <span style={{ fontWeight: 800, fontSize: '13px', color: (stats?.max1h || 0) >= 10 ? '#22C55E' : 'white' }}>
+                  {stats?.max1h || 0}/10
+                </span>
               </div>
 
-              {/* Tooltip */}
+              {/* Divider */}
+              <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.15)' }} />
+
+              {/* 1H30 Counter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.55)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>1H30</span>
+                <span style={{ fontWeight: 800, fontSize: '13px', color: (stats?.max2h || 0) >= 10 ? '#22C55E' : 'white' }}>
+                  {stats?.max2h || 0}/10
+                </span>
+              </div>
+
+              {/* Tooltip Liquid Glass */}
               {showTooltip && (
                 <div style={{
                   position: 'absolute',
                   top: '100%',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  marginTop: '8px',
-                  background: '#1F1F1F',
-                  border: '1px solid #333',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  minWidth: '260px',
+                  marginTop: '10px',
+                  background: 'rgba(8, 10, 12, 0.98)',
+                  backdropFilter: 'blur(28px)',
+                  WebkitBackdropFilter: 'blur(28px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '20px',
+                  padding: '16px',
+                  minWidth: '290px',
                   zIndex: 1000,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.85)'
                 }}>
-                  {/* Golden Slots Section */}
-                  {goldenSlots.length > 0 && (
-                    <>
-                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Créneaux validés (4h)</div>
+                  {/* Section 1H */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Créneaux 1h (60 min)</span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: (stats?.max1h || 0) >= 10 ? '#22C55E' : 'rgba(255,255,255,0.6)' }}>Max: {stats?.max1h || 0}/10</span>
+                    </div>
+                    {stats?.slots1h && stats.slots1h.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {goldenSlots.map((slot, idx) => (
-                          <div key={idx} style={{
-                            fontSize: '11px',
-                            color: '#1ED760',
-                            fontWeight: '600',
-                            background: '#0A0A0A',
-                            padding: '6px 8px',
-                            borderRadius: '4px',
-                            border: '1px solid #2A2A2A'
-                          }}>
-                            {slot.day} • {slot.hour}h-{slot.endHour || (slot.hour + 4)}h
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Divider if both exist */}
-                  {goldenSlots.length > 0 && potentialSlots && potentialSlots.length > 0 && (
-                    <div style={{ height: '1px', background: '#333', margin: '12px 0' }} />
-                  )}
-
-                  {/* Best Potential Slot Section */}
-                  {potentialSlots && potentialSlots.length > 0 && (
-                    <>
-                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', fontWeight: '600' }}>Potentiels 4h (En cours)</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {potentialSlots.map((slot, idx) => {
-                          const dateStr = slot.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                          const dayName = slot.date.toLocaleDateString('fr-FR', { weekday: 'short' });
-
-                          // Color Logic
-                          let countColor = '#F97316'; // Default Orange (< 10)
-                          let countBg = '#F97316';
-
-                          if (slot.count && slot.count >= 10) {
-                            if (slot.count % 2 === 0) {
-                              // Even >= 10 -> Green
-                              countColor = '#22C55E';
-                              countBg = '#22C55E';
-                            } else {
-                              // Odd >= 11 -> Yellow
-                              countColor = '#EAB308';
-                              countBg = '#EAB308';
-                            }
-                          }
-
+                        {stats.slots1h.slice(0, 4).map((slot: any, idx: number) => {
+                          const isFull = slot.count >= 10;
                           return (
                             <div key={idx} style={{
                               fontSize: '11px',
-                              color: countColor,
-                              fontWeight: '600',
-                              background: '#0A0A0A',
-                              padding: '6px 8px',
-                              borderRadius: '4px',
-                              border: '1px solid #2A2A2A',
+                              color: isFull ? '#22C55E' : '#4ADE80',
+                              fontWeight: '700',
+                              background: isFull ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.08)',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: isFull ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(34, 197, 94, 0.20)',
                               display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
+                              justifyContent: 'space-between'
                             }}>
-                              <span>{dateStr} ({dayName}) • {slot.hour}h-{slot.endHour || (slot.hour + 4)}h</span>
-                              <span style={{ background: countBg, color: 'black', padding: '1px 4px', borderRadius: '2px', fontSize: '10px', fontWeight: 'bold' }}>
-                                {slot.count}
-                              </span>
+                              <span>{slot.day} • {slot.hour}h-{slot.hour + 1}h</span>
+                              <span>{slot.count}/10</span>
                             </div>
                           );
                         })}
                       </div>
-                    </>
-                  )}
+                    ) : (
+                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.35)', fontStyle: 'italic', padding: '2px 0' }}>Aucune disponibilité</div>
+                    )}
+                  </div>
 
-                  {/* Empty State */}
-                  {goldenSlots.length === 0 && (!potentialSlots || potentialSlots.length === 0) && (
-                    <div style={{ fontSize: '10px', color: '#666', fontWeight: '500' }}>
-                      Aucun créneau pour le moment
+                  {/* Section 1H30 */}
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Créneaux 1h30 (2h dispo)</span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: (stats?.max2h || 0) >= 10 ? '#22C55E' : 'rgba(255,255,255,0.6)' }}>Max: {stats?.max2h || 0}/10</span>
                     </div>
-                  )}
+                    {stats?.slots2h && stats.slots2h.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {stats.slots2h.slice(0, 4).map((slot: any, idx: number) => {
+                          const isFull = slot.count >= 10;
+                          return (
+                            <div key={idx} style={{
+                              fontSize: '11px',
+                              color: isFull ? '#22C55E' : '#4ADE80',
+                              fontWeight: '700',
+                              background: isFull ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.08)',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: isFull ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(34, 197, 94, 0.20)',
+                              display: 'flex',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span>{slot.day} • {slot.hour}h-{slot.hour + 2}h</span>
+                              <span>{slot.count}/10</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.35)', fontStyle: 'italic', padding: '2px 0' }}>Aucune disponibilité sur 2h</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Right: User & Menu */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 10 }}>
 
-          {/* Call Button */}
+          {/* Call Button - Liquid Glass */}
           {!hideCallButton && (
             <button
               onClick={() => onOpenCallModal?.()}
-              className="p-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] rounded-full transition-colors cursor-pointer"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '21px',
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(56, 189, 248, 0.18) 35%, rgba(14, 165, 233, 0.08) 100%)',
+                backdropFilter: 'blur(24px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                boxShadow: '0 8px 24px rgba(56, 189, 248, 0.25), inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                flexShrink: 0,
+              }}
+              className="hover:scale-105 active:scale-95"
               title="Lancer un appel"
             >
-              <Megaphone size={20} />
+              <Megaphone size={19} color="#38BDF8" />
             </button>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#333', border: '2px solid #555' }}>
+          {/* User Profile Info (Clickable -> Opens FUT Card Modal) */}
+          <div
+            onClick={() => setProfileModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '16px',
+              transition: 'all 0.2s ease',
+            }}
+            className="hover:bg-white/[0.06] active:scale-95"
+            title="Voir ma Carte FUT & Profil"
+          >
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#333', border: '2px solid rgba(255,255,255,0.2)' }}>
               {displayImage ? (
                 <img
                   src={displayImage}
                   alt="Profile"
                   referrerPolicy="no-referrer"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    console.error("Failed to load image:", displayImage);
-                    e.currentTarget.style.display = 'none';
-                  }}
                 />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '14px' }}>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent)', color: '#030905', fontWeight: 'bold' }}>
                   {displayName.charAt(0)?.toUpperCase() || "?"}
                 </div>
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'white', lineHeight: '1' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'white', lineHeight: '1.2' }}>
                 {displayName}
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }} />
                 <span style={{ fontSize: '10px', color: '#22C55E', fontWeight: '500' }}>Connecté</span>
               </div>
             </div>
           </div>
 
-          {/* Custom CSS Menu */}
-          <div id="custom-menu">
-            <input type="checkbox" id="menu-toggle" />
-            <ul className={isAdmin ? "admin-mode" : ""}>
-              <li>
-                <Link href="/history" title="Historique">
-                  <History size={20} className="text-green-500" color="#22C55E" />
-                </Link>
-              </li>
-              <li>
-                <Link href="/leaderboard" title="Classement">
-                  <Trophy size={20} className="text-yellow-400" color="#EAB308" />
-                </Link>
-              </li>
-              {isAdmin && (
-                <li>
-                  <Link href="/admin" title="Administration">
-                    <Shield size={20} className="text-violet-500" color="#8B5CF6" />
-                  </Link>
-                </li>
-              )}
-              <li>
-                <button
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  title="Se déconnecter"
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
-                >
-                  <LogOut size={20} className="text-red-500" color="#EF4444" />
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div >
+          {/* Glassy Sliding Menu */}
+          <div
+            style={{
+              position: 'relative',
+              height: '42px',
+              borderRadius: '21px',
+              background: isMenuOpen ? 'rgba(6, 18, 12, 0.94)' : 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%)',
+              backdropFilter: 'blur(24px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0.5px rgba(255, 255, 255, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+              overflow: 'hidden',
+              padding: '0 3px',
+              zIndex: 30,
+            }}
+          >
+            {/* Toggle Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isMenuOpen ? 'rgba(255, 255, 255, 0.10)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'white',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+              title={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            >
+              {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
 
-      </div >
+            {/* Sliding Icons Container */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                width: isMenuOpen ? (isAdmin ? '240px' : '200px') : '0px',
+                opacity: isMenuOpen ? 1 : 0,
+                transform: isMenuOpen ? 'translateX(0)' : 'translateX(-8px)',
+                transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                overflow: 'hidden',
+              }}
+            >
+              <Link
+                href="/"
+                title="Dashboard"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  color: '#38BDF8',
+                  background: pathname === '/' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hover:bg-white/10 hover:scale-110"
+              >
+                <LayoutDashboard size={18} />
+              </Link>
+
+              <Link
+                href="/planning"
+                title="Planning"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  color: pathname === '/planning' ? '#22C55E' : '#22C55E',
+                  background: pathname === '/planning' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hover:bg-white/10 hover:scale-110"
+              >
+                <Calendar size={18} />
+              </Link>
+
+              <Link
+                href="/leaderboard"
+                title="Classement"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  color: pathname === '/leaderboard' ? '#EAB308' : '#EAB308',
+                  background: pathname === '/leaderboard' ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hover:bg-white/10 hover:scale-110"
+              >
+                <Trophy size={18} />
+              </Link>
+
+              <Link
+                href="/history"
+                title="Historique"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  color: pathname === '/history' ? '#A855F7' : '#A855F7',
+                  background: pathname === '/history' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hover:bg-white/10 hover:scale-110"
+              >
+                <History size={18} />
+              </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  title="Administration"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '12px',
+                    color: pathname === '/admin' ? '#8B5CF6' : '#8B5CF6',
+                    background: pathname === '/admin' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                    transition: 'all 0.2s ease',
+                  }}
+                  className="hover:bg-white/10 hover:scale-110"
+                >
+                  <Shield size={18} />
+                </Link>
+              )}
+
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                title="Se déconnecter"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#EF4444',
+                  transition: 'all 0.2s ease',
+                }}
+                className="hover:bg-white/10 hover:scale-110"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Player Profile & FUT Card Modal */}
+      <PlayerCardModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        userId={userId}
+      />
     </>
   );
 }

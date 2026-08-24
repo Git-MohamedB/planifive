@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, isAdmin } from "@/lib/auth";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
     try {
-        const matches = await prisma.match.findMany({
-            orderBy: {
-                date: 'desc',
-            },
-        });
+        let matches: any[] = [];
+        try {
+            matches = await prisma.$queryRawUnsafe<any[]>('SELECT * FROM "Match" ORDER BY "date" DESC');
+        } catch (rawErr) {
+            console.warn("Raw matches query fallback:", rawErr);
+            matches = await (prisma.match as any).findMany({
+                orderBy: { date: 'desc' },
+            });
+        }
 
         // Transformer les données pour inclure les noms personnalisés depuis les champs JSON
         const transformedMatches = matches.map(match => {
@@ -19,27 +26,31 @@ export async function GET() {
             try {
                 team1Names = match.team1Names ? JSON.parse(match.team1Names) : [];
             } catch (e) {
-                console.error('Error parsing team1Names for match', match.id, e);
                 team1Names = [];
             }
 
             try {
                 team2Names = match.team2Names ? JSON.parse(match.team2Names) : [];
             } catch (e) {
-                console.error('Error parsing team2Names for match', match.id, e);
                 team2Names = [];
             }
 
             return {
                 ...match,
-                team1: [], // Liste vide car on utilise les noms personnalisés
-                team2: [], // Liste vide car on utilise les noms personnalisés
+                team1: [],
+                team2: [],
                 team1Names,
                 team2Names,
+                mvpVotes: match.mvpVotes || null,
+                mvpWinner: match.mvpWinner || null,
             };
         });
 
-        return NextResponse.json(transformedMatches);
+        return NextResponse.json(transformedMatches, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+        });
     } catch (error) {
         console.error('Error fetching matches:', error);
         return NextResponse.json({ error: 'Error fetching matches' }, { status: 500 });
@@ -49,9 +60,8 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
-        const ADMIN_EMAILS = ["sheizeracc@gmail.com"];
 
-        if (!session || !session.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+        if (!session || !session.user?.email || !isAdmin(session.user.email)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 

@@ -33,19 +33,24 @@ export async function GET(req: Request) {
   }
 
   const allDispos = await prisma.availability.findMany({
-    where: whereClause,
-    include: { user: { select: { id: true, name: true, image: true } } }
+    where: {
+      ...whereClause,
+      user: { isBanned: false },
+    },
+    include: { user: { select: { id: true, name: true, customName: true, image: true, isBanned: true } } }
   });
 
   const mySlots: string[] = [];
   const slotDetails: Record<string, SlotData> = {};
 
   allDispos.forEach((dispo) => {
+    if (dispo.user.isBanned) return;
     const dateStr = dispo.date.toISOString().split("T")[0];
     const key = `${dateStr}-${dispo.hour}`;
     if (!slotDetails[key]) slotDetails[key] = { users: [], count: 0 };
     slotDetails[key].count++;
-    slotDetails[key].users.push({ id: dispo.user.id, name: dispo.user.name, image: dispo.user.image });
+    const displayName = dispo.user.customName || dispo.user.name;
+    slotDetails[key].users.push({ id: dispo.user.id, name: displayName, customName: dispo.user.customName, image: dispo.user.image } as any);
     if (dispo.userId === userId) mySlots.push(key);
   });
 
@@ -114,9 +119,8 @@ export async function POST(req: Request) {
 
     // Only trigger cancellation if we dropped BELOW the limit
     if (newCount < MATCH_SIZE) {
-      // Check for broken golden slot (range: hour-3 to hour)
-      // We only care if a golden slot WAS notified starting at these hours
-      const potentialStarts = [hour - 3, hour - 2, hour - 1, hour].filter(h => h >= 8 && h <= 21);
+      // Check for broken 1h30 slot (range: hour-1 to hour)
+      const potentialStarts = [hour - 1, hour].filter(h => h >= 8 && h <= 22);
 
       // Single query to find active notifications in this range
       const activeNotifications = await prisma.slotStatus.findMany({
@@ -129,16 +133,16 @@ export async function POST(req: Request) {
 
       for (const status of activeNotifications) {
         const startH = status.hour;
-        console.log(`[DELETE] Broken Golden Slot found starting at ${startH}h`);
+        console.log(`[DELETE] Broken 1h30 Slot found starting at ${startH}h`);
 
         const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
         const embed = {
-          title: "❌ DÉSISTEMENT SUR UN CRÉNEAU 4H !",
-          description: `${userName} s'est désisté du créneau de ${hour}h, annulant la session de 4h (${startH}h - ${(startH + 4) % 24 === 0 ? "00" : (startH + 4) % 24}h).`,
+          title: "❌ DÉSISTEMENT SUR UN CRÉNEAU FIVE !",
+          description: `${userName} s'est désisté du créneau de ${hour}h, annulant la disponibilité 1h30 (${startH}h - ${(startH + 2) % 24 === 0 ? "00" : (startH + 2) % 24}h).`,
           color: 0xEF4444, // Red
           fields: [
             { name: "📅 Date", value: dateStr, inline: true },
-            { name: "⏰ Session impactée", value: `${startH}h - ${(startH + 4) % 24 === 0 ? "00" : (startH + 4) % 24}h`, inline: true },
+            { name: "⏰ Session impactée", value: `${startH}h - ${(startH + 2) % 24 === 0 ? "00" : (startH + 2) % 24}h (1h30)`, inline: true },
             { name: "📉 Action", value: "Le statut confirmé a été révoqué.", inline: false },
             { name: "🔗 Remonter l'équipe", value: "[Clique ici](https://planifive.vercel.app/)" }
           ],
@@ -170,64 +174,62 @@ export async function POST(req: Request) {
     });
 
     if (count >= MATCH_SIZE) {
-      // Check Golden Slot (4 Consecutive Slots)
-      // We need to check range [hour-3, hour+3] to see if we formed a sequence of 4
-      const rangeStart = hour - 3;
-      const rangeEnd = hour + 3;
+      // Check 1h30 Slot (2 Consecutive Slots: startH and startH+1)
+      const rangeStart = Math.max(8, hour - 1);
+      const rangeEnd = Math.min(23, hour + 1);
 
-      // Single query for all relevant slots
+      // Query relevant slots
       const relevantSlots = await prisma.availability.findMany({
         where: {
           date: targetDate,
           hour: { gte: rangeStart, lte: rangeEnd }
         },
-        select: { hour: true, user: { select: { name: true } } }
+        select: { hour: true, userId: true, user: { select: { name: true, customName: true } } }
       });
 
       // Group by hour
-      const slotsMap = new Map<number, string[]>();
+      const slotsMap = new Map<number, { userId: string; name: string }[]>();
       for (let h = rangeStart; h <= rangeEnd; h++) slotsMap.set(h, []);
 
       relevantSlots.forEach(s => {
-        if (slotsMap.has(s.hour)) slotsMap.get(s.hour)?.push(s.user.name || "Inconnu");
+        if (slotsMap.has(s.hour)) {
+          slotsMap.get(s.hour)?.push({
+            userId: s.userId,
+            name: s.user.customName || s.user.name || "Joueur"
+          });
+        }
       });
 
-      // Helper to check sequence
-      const checkSequence = async (startH: number) => {
-        if (startH < 8 || startH > 21) return;
-        const c1 = slotsMap.get(startH)?.length || 0;
-        const c2 = slotsMap.get(startH + 1)?.length || 0;
-        const c3 = slotsMap.get(startH + 2)?.length || 0;
-        const c4 = slotsMap.get(startH + 3)?.length || 0;
+      // Helper to check 2-hour sequence for a 1h30 match
+      const check2hSequence = async (startH: number) => {
+        if (startH < 8 || startH > 22) return;
+        const users1 = slotsMap.get(startH) || [];
+        const users2 = slotsMap.get(startH + 1) || [];
 
-        if (c1 >= MATCH_SIZE && c2 >= MATCH_SIZE && c3 >= MATCH_SIZE && c4 >= MATCH_SIZE) {
-          // Found a golden slot! Check if already notified
+        const commonUsers = users1.filter(u1 => users2.some(u2 => u2.userId === u1.userId));
+
+        if (commonUsers.length >= MATCH_SIZE) {
+          // Found a complete 1h30 slot! Check if already notified
           const goldenStatus = await prisma.slotStatus.findUnique({
             where: { date_hour: { date: targetDate, hour: startH } },
           });
 
           if (!goldenStatus?.isGoldenNotified) {
-            const allPlayers = [
-              ...(slotsMap.get(startH) || []),
-              ...(slotsMap.get(startH + 1) || []),
-              ...(slotsMap.get(startH + 2) || []),
-              ...(slotsMap.get(startH + 3) || [])
-            ];
-            const uniquePlayers = Array.from(new Set(allPlayers));
             const dateStr = targetDate.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
-            const playersList = uniquePlayers.map(p => `• ${p}`).join("\n");
+            const playersList = commonUsers.map(p => `• ${p.name}`).join("\n");
+            const endHour = (startH + 2) % 24 === 0 ? "00" : (startH + 2);
 
             const embed = {
-              title: "🏆 CRÉNEAU 4H CONFIRMÉ !",
-              description: `Incroyable ! 4 créneaux consécutifs sont complets (${startH}h - ${(startH + 4) % 24 === 0 ? "00" : (startH + 4) % 24}h) !`,
-              color: 0xFACC15, // Gold
+              title: "🔥 CRÉNEAU 1H30 COMPLET (10/10) !",
+              description: `C'est bon pour le Five ! 10 joueurs sont disponibles sur 2h consécutives (${startH}h - ${endHour}h) !`,
+              color: 0x22C55E, // Pitch Green
               fields: [
                 { name: "📅 Date", value: dateStr, inline: true },
-                { name: "⏰ Créneaux", value: `${startH}h - ${startH + 1}h - ${startH + 2}h - ${(startH + 3) === 24 ? "00" : startH + 3}h`, inline: true },
-                { name: "⚽ Joueurs présents", value: playersList || "Aucun joueur trouvé", inline: false },
-                { name: "🔗 Rejoindre", value: "[Clique ici](https://planifive.vercel.app/)" }
+                { name: "⏰ Créneau", value: `${startH}h00 - ${endHour}h00 (1h30 de Five)`, inline: true },
+                { name: `⚽ Joueurs présents (${commonUsers.length}/10)`, value: playersList || "Aucun joueur", inline: false },
+                { name: "🔗 Lancer l'appel ou réserver", value: "[Clique ici](https://planifive.vercel.app/)" }
               ],
-              footer: { text: "Planifive • Golden Session" },
+              footer: { text: "Planifive • Match Prêt" },
               timestamp: new Date().toISOString(),
             };
 
@@ -243,12 +245,10 @@ export async function POST(req: Request) {
         }
       };
 
-      // Check possible start times for a sequence involving 'hour'
-      // Sequence can start at: hour-2, hour-1, or hour
+      // Check possible start times for a 2h sequence involving 'hour'
       await Promise.all([
-        checkSequence(hour - 2),
-        checkSequence(hour - 1),
-        checkSequence(hour)
+        check2hSequence(hour - 1),
+        check2hSequence(hour)
       ]);
     }
   }
@@ -261,66 +261,68 @@ export async function PUT(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
 
-    const { start, end, slots } = await req.json();
+    const body = await req.json();
     const userId = session.user.id;
 
-    console.log(`[PUT] Syncing slots for ${userId} from ${start} to ${end}. Slots: ${slots?.length}`);
+    // Support both multi-week batch ({ weeks: [{ start, end, slots }] }) and single range ({ start, end, slots })
+    const weeksToSync: { start: string; end: string; slots: { date: string; hour: number }[] }[] = [];
 
-    if (!start || !end || !Array.isArray(slots)) {
+    if (Array.isArray(body.weeks) && body.weeks.length > 0) {
+      weeksToSync.push(...body.weeks);
+    } else if (body.start && body.end && Array.isArray(body.slots)) {
+      weeksToSync.push({ start: body.start, end: body.end, slots: body.slots });
+    } else {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
 
-    const startDate = new Date(start);
-    // Ensure startDate is at 00:00:00.000 (It should be already if string is YYYY-MM-DD)
-    startDate.setHours(0, 0, 0, 0);
+    let totalInserted = 0;
 
-    const endDate = new Date(end);
-    // Ensure endDate covers the ENTIRE day (23:59:59.999)
-    endDate.setHours(23, 59, 59, 999);
-
-    // Prepare data for createMany
-    // Remove duplicates from client if any
-    const uniqueSlots = new Set<string>();
-    const data: any[] = [];
-
-    for (const s of slots) {
-      // Ensure we only process slots within our declared range (Safety)
-      const slotDate = new Date(s.date);
-      // Compare timestamps
-      if (slotDate.getTime() >= startDate.getTime() && slotDate.getTime() <= endDate.getTime()) {
-        const key = `${s.date}-${s.hour}`;
-        if (!uniqueSlots.has(key)) {
-          uniqueSlots.add(key);
-          data.push({
-            userId: userId,
-            date: slotDate,
-            hour: s.hour
-          });
-        }
-      }
-    }
-
-    // Usar transaction to prevent partial state
     await prisma.$transaction(async (tx) => {
-      // 1. Delete all existing slots for this user in the range
-      const deleteResult = await tx.availability.deleteMany({
-        where: {
-          userId: userId,
-          date: { gte: startDate, lte: endDate }
-        }
-      });
-      console.log(`[PUT] Deleted ${deleteResult.count} existing slots.`);
+      for (const week of weeksToSync) {
+        const startDate = new Date(week.start);
+        startDate.setHours(0, 0, 0, 0);
 
-      // 2. Insert new slots
-      if (data.length > 0) {
-        await tx.availability.createMany({
-          data: data
+        const endDate = new Date(week.end);
+        endDate.setHours(23, 59, 59, 999);
+
+        // 1. Delete all existing slots for this user in this week's range
+        await tx.availability.deleteMany({
+          where: {
+            userId: userId,
+            date: { gte: startDate, lte: endDate }
+          }
         });
-        console.log(`[PUT] Inserted ${data.length} new slots.`);
+
+        // 2. Prepare unique new slots
+        const uniqueSlots = new Set<string>();
+        const data: any[] = [];
+
+        for (const s of week.slots || []) {
+          const slotDate = new Date(s.date);
+          if (slotDate.getTime() >= startDate.getTime() && slotDate.getTime() <= endDate.getTime()) {
+            const key = `${s.date}-${s.hour}`;
+            if (!uniqueSlots.has(key)) {
+              uniqueSlots.add(key);
+              data.push({
+                userId: userId,
+                date: slotDate,
+                hour: s.hour
+              });
+            }
+          }
+        }
+
+        if (data.length > 0) {
+          await tx.availability.createMany({
+            data: data
+          });
+          totalInserted += data.length;
+        }
       }
     });
 
-    return NextResponse.json({ status: "synced", count: data.length });
+    console.log(`[PUT] Successfully synced ${weeksToSync.length} week(s) for user ${userId}. Inserted: ${totalInserted}`);
+    return NextResponse.json({ status: "synced", weeksCount: weeksToSync.length, count: totalInserted });
   } catch (error) {
     console.error("[PUT] Error syncing slots:", error);
     return NextResponse.json({ error: "Internal Server Error", details: String(error) }, { status: 500 });

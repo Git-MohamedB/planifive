@@ -332,33 +332,6 @@ export default function DashboardPage() {
               </svg>
               <span>Continuer avec Discord</span>
             </button>
-
-            {/* Dev Mode Button */}
-            <button
-              onClick={() => signIn("credentials", { callbackUrl: "/" })}
-              style={{
-                width: "100%",
-                padding: "10px 18px",
-                borderRadius: 14,
-                background: "rgba(255, 255, 255, 0.04)",
-                color: "rgba(255, 255, 255, 0.65)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                transition: "all 0.2s ease",
-              }}
-              className="hover:bg-white/[0.08] hover:text-white"
-            >
-              <Sparkles size={13} color="rgba(255, 255, 255, 0.6)" />
-              <span>Mode Dev Rapide</span>
-            </button>
           </div>
         </div>
       </div>

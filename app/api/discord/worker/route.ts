@@ -46,7 +46,7 @@ async function getUpdatedEmbedData(callId: string) {
 
     if (!call) return null;
 
-    const slotsCount = call.duration === 90 ? 5 : 4;
+    const slotsCount = call.duration === 90 ? 2 : 1;
     const slots = Array.from({ length: slotsCount }, (_, i) => call.hour + i);
 
     const availabilities = await prisma.availability.findMany({
@@ -84,6 +84,9 @@ async function getUpdatedEmbedData(callId: string) {
     const dateObj = new Date(call.date);
     const dateStr = dateObj.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
     const durationStr = call.duration === 90 ? "1h30" : "1h00";
+    const endHourText = call.duration === 90
+        ? `${(call.hour + 2) % 24 === 0 ? "00" : (call.hour + 2) % 24}h (1h30)`
+        : `${(call.hour + 1) % 24 === 0 ? "00" : (call.hour + 1) % 24}h (1h00)`;
 
     const embed = {
         title: "📢 NOUVEL APPEL FIVE !",
@@ -94,7 +97,7 @@ async function getUpdatedEmbedData(callId: string) {
         color: 5763719,
         url: "https://planifive.vercel.app/",
         fields: [
-            { name: "Créneau réservé", value: `${call.hour}h - ${(call.hour + slotsCount) % 24 === 0 ? "00" : (call.hour + slotsCount) % 24}h`, inline: true },
+            { name: "Créneau réservé", value: `${call.hour}h00 - ${endHourText}`, inline: true },
             { name: `👥 Participants (${count}/10)`, value: count > 0 ? names.join(", ") : "Aucun inscrit", inline: false },
             { name: "🔥 Places restantes", value: `${missing > 0 ? missing : 0} places`, inline: true }
         ],
@@ -128,7 +131,7 @@ async function syncAvailability(userId: string, callId: string, action: 'add' | 
     const call = await prisma.call.findUnique({ where: { id: callId } });
     if (!call) return;
 
-    const slotsCount = call.duration === 90 ? 5 : 4;
+    const slotsCount = call.duration === 90 ? 2 : 1;
     const slots = Array.from({ length: slotsCount }, (_, i) => call.hour + i);
 
     if (action === 'remove') {

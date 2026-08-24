@@ -84,92 +84,147 @@ export default function CallModal({ isOpen, onClose, initialDate, initialHour }:
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.82)',
+                        backdropFilter: 'blur(12px)',
                         zIndex: 999999,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '1rem',
+                        padding: '1.5rem',
                     }}
                     onClick={onClose}
                 >
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         style={{
-                            background: 'linear-gradient(to bottom right, #1A1A1A, #0F0F0F)',
-                            borderRadius: '32px',
-                            border: '1px solid #333',
-                            maxWidth: '55rem',
-                            width: '95%',
-                            minHeight: '700px',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
-                            overflow: 'hidden',
+                            position: 'relative',
+                            width: '100%',
+                            maxWidth: '620px',
+                            background: 'linear-gradient(145deg, rgba(8, 16, 11, 0.96) 0%, rgba(4, 8, 6, 0.98) 100%)',
+                            backdropFilter: 'blur(30px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+                            borderRadius: '24px',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            boxShadow: '0 30px 80px rgba(0,0,0,0.85), inset 0 1px 1px rgba(255,255,255,0.2)',
                             display: 'flex',
                             flexDirection: 'column',
-                            position: 'relative'
+                            overflow: 'hidden',
+                            zIndex: 10,
+                            maxHeight: '92vh'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header - Matches "Ajouter Match" style */}
+                        {/* Header */}
                         <div style={{
-                            background: 'linear-gradient(to bottom right, #222, #181818)',
-                            padding: '2rem 1.5rem',
-                            borderBottom: '1px solid #333',
+                            padding: '2.25rem 2rem 1.5rem 2rem',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                             position: 'relative',
-                            borderTopLeftRadius: '32px',
-                            borderTopRightRadius: '32px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '8px'
                         }}>
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 p-3 rounded-full bg-transparent border-none text-[#B3B3B3] cursor-pointer transition-all duration-300 hover:bg-white/10 hover:text-white flex items-center justify-center"
+                                style={{
+                                    position: 'absolute',
+                                    top: '18px',
+                                    right: '18px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    cursor: 'pointer',
+                                    padding: '8px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                    e.currentTarget.style.color = '#fff';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                                }}
                             >
                                 <X size={18} />
                             </button>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{
-                                    padding: '1rem',
-                                    borderRadius: '1rem',
-                                    background: 'rgba(88, 101, 242, 0.1)', // Blue for Call
-                                    border: '1px solid rgba(88, 101, 242, 0.3)',
-                                }}>
-                                    <Megaphone size={32} color="#5865F2" />
-                                </div>
-                                <h2 style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: 'bold',
-                                    color: 'white',
-                                    textAlign: 'center',
-                                }}>
-                                    Lancer un Appel
-                                </h2>
+                            <div style={{
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '14px',
+                                background: 'rgba(34, 197, 94, 0.12)',
+                                border: '1px solid rgba(34, 197, 94, 0.25)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '4px'
+                            }}>
+                                <Megaphone size={22} color="#22C55E" />
                             </div>
+                            
+                            <h2 style={{
+                                fontSize: '1.4rem',
+                                fontWeight: 800,
+                                color: 'white',
+                                textAlign: 'center',
+                                letterSpacing: '0.01em',
+                                margin: 0,
+                            }}>
+                                Lancer un Appel
+                            </h2>
                         </div>
 
                         {/* Body */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0 80px', overflowY: 'auto' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2rem 2.25rem 2.25rem 2.25rem', overflowY: 'auto' }}>
                             {success ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-center h-full">
-                                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-8">
-                                        <Megaphone className="text-green-500" size={48} />
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center' }}>
+                                    <div style={{
+                                        width: '72px',
+                                        height: '72px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: '20px',
+                                        background: 'rgba(34, 197, 94, 0.15)',
+                                        border: '1px solid rgba(34, 197, 94, 0.3)'
+                                    }}>
+                                        <Megaphone size={34} color="#22C55E" />
                                     </div>
-                                    <h3 className="text-3xl font-bold text-white mb-4">Appel Envoyé !</h3>
-                                    <p className="text-gray-400 text-xl">La notification est partie sur Discord.</p>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', margin: '0 0 8px 0' }}>Appel Envoyé !</h3>
+                                    <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', margin: 0 }}>La notification est partie sur Discord.</p>
                                 </div>
                             ) : (
-                                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                                     {error && (
-                                        <div className="p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-sm text-center font-medium mb-4">
+                                        <div style={{
+                                            padding: '12px 16px',
+                                            background: 'rgba(239, 68, 68, 0.12)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '12px',
+                                            color: '#F87171',
+                                            fontSize: '13px',
+                                            fontWeight: 600,
+                                            textAlign: 'center',
+                                            marginBottom: '20px',
+                                            backdropFilter: 'blur(8px)'
+                                        }}>
                                             {error}
                                         </div>
                                     )}
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', paddingTop: '40px', flex: 1 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
                                         {/* Date */}
-                                        <div>
-                                            <label className="block text-gray-400 text-sm font-medium mb-1">
+                                        <div style={{ width: '100%' }}>
+                                            <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                 Date
                                             </label>
                                             <input
@@ -177,49 +232,135 @@ export default function CallModal({ isOpen, onClose, initialDate, initialHour }:
                                                 required
                                                 value={date}
                                                 onChange={(e) => setDate(e.target.value)}
-                                                className="w-full bg-[#2A2A2A] text-white focus:outline-none focus:bg-[#1a1a1a] transition-all duration-300 shadow-lg border-none ring-0"
-                                                style={{ borderRadius: '20px', padding: '0 1rem', height: '38px', fontSize: '1rem' }}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '46px',
+                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    borderRadius: '14px',
+                                                    padding: '0 16px',
+                                                    fontSize: '14px',
+                                                    fontFamily: 'inherit',
+                                                    color: 'white',
+                                                    outline: 'none',
+                                                    boxSizing: 'border-box',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+                                                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                                                }}
+                                                onBlur={(e) => {
+                                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.35)';
+                                                }}
                                             />
                                         </div>
 
                                         {/* Heure & Durée */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', width: '100%' }}>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm font-medium mb-1">
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', width: '100%' }}>
+                                            <div style={{ minWidth: 0 }}>
+                                                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                     Heure
                                                 </label>
-                                                <div className="relative">
+                                                <div style={{ position: 'relative', width: '100%' }}>
                                                     <select
                                                         value={hour}
                                                         onChange={(e) => setHour(e.target.value)}
-                                                        className="w-full bg-[#2A2A2A] text-white focus:outline-none focus:bg-[#1a1a1a] transition-all duration-300 shadow-lg border-none ring-0 appearance-none cursor-pointer"
-                                                        style={{ borderRadius: '20px', padding: '0 3rem 0 1rem', height: '38px', fontSize: '1rem' }}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '46px',
+                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            borderRadius: '14px',
+                                                            padding: '0 40px 0 16px',
+                                                            fontSize: '14px',
+                                                            fontFamily: 'inherit',
+                                                            color: 'white',
+                                                            outline: 'none',
+                                                            boxSizing: 'border-box',
+                                                            cursor: 'pointer',
+                                                            appearance: 'none',
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.35)';
+                                                        }}
                                                     >
                                                         {HOURS.map((h) => (
-                                                            <option key={h} value={h}>{h}h00</option>
+                                                            <option key={h} value={h} style={{ background: '#08120a', color: 'white' }}>{h}h00</option>
                                                         ))}
                                                     </select>
-                                                    <div className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" style={{ right: '1rem' }}>
+                                                    <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255, 255, 255, 0.4)', display: 'flex', alignItems: 'center' }}>
                                                         <Clock size={16} />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm font-medium mb-1">
+
+                                            <div style={{ minWidth: 0 }}>
+                                                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                     Durée
                                                 </label>
-                                                <div className="flex w-full bg-[#2A2A2A] rounded-full p-1 h-[38px] shadow-lg">
+                                                <div style={{
+                                                    display: 'flex',
+                                                    width: '100%',
+                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    borderRadius: '14px',
+                                                    padding: '4px',
+                                                    height: '46px',
+                                                    boxSizing: 'border-box'
+                                                }}>
                                                     <button
                                                         type="button"
                                                         onClick={() => setDuration(60)}
-                                                        className={`flex-1 rounded-full text-xs font-bold transition-all cursor-pointer ${duration === 60 ? 'bg-[#5865F2] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                                        style={{
+                                                            flex: 1,
+                                                            borderRadius: '10px',
+                                                            fontWeight: 700,
+                                                            fontSize: '13px',
+                                                            fontFamily: 'inherit',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
+                                                            ...(duration === 60 ? {
+                                                                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                                                color: 'white',
+                                                                boxShadow: '0 2px 10px rgba(34, 197, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+                                                            } : {
+                                                                background: 'transparent',
+                                                                color: 'rgba(255, 255, 255, 0.6)',
+                                                            })
+                                                        }}
                                                     >
                                                         1h
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => setDuration(90)}
-                                                        className={`flex-1 rounded-full text-xs font-bold transition-all cursor-pointer ${duration === 90 ? 'bg-[#5865F2] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                                        style={{
+                                                            flex: 1,
+                                                            borderRadius: '10px',
+                                                            fontWeight: 700,
+                                                            fontSize: '13px',
+                                                            fontFamily: 'inherit',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
+                                                            ...(duration === 90 ? {
+                                                                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                                                color: 'white',
+                                                                boxShadow: '0 2px 10px rgba(34, 197, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+                                                            } : {
+                                                                background: 'transparent',
+                                                                color: 'rgba(255, 255, 255, 0.6)',
+                                                            })
+                                                        }}
                                                     >
                                                         1h30
                                                     </button>
@@ -228,81 +369,207 @@ export default function CallModal({ isOpen, onClose, initialDate, initialHour }:
                                         </div>
 
                                         {/* Lieu & Prix */}
-                                        {/* NOTE: Aligning columns with Heure/Durée (1fr 1fr) */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', width: '100%' }}>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm font-medium mb-1">
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16px', width: '100%' }}>
+                                            <div style={{ minWidth: 0 }}>
+                                                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                     Lieu
                                                 </label>
-                                                <div className="relative w-full">
+                                                <div style={{ position: 'relative', width: '100%' }}>
                                                     <input
                                                         type="text"
                                                         required
                                                         placeholder="Ex: Urban Soccer..."
                                                         value={location}
                                                         onChange={(e) => setLocation(e.target.value)}
-                                                        className="w-full bg-[#2A2A2A] text-white placeholder:text-gray-500 focus:outline-none focus:bg-[#1a1a1a] transition-all duration-300 shadow-lg border-none ring-0"
-                                                        style={{ borderRadius: '20px', padding: '0 1rem 0 2.5rem', height: '38px', fontSize: '1rem' }}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '46px',
+                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            borderRadius: '14px',
+                                                            padding: '0 16px 0 42px',
+                                                            fontSize: '14px',
+                                                            fontFamily: 'inherit',
+                                                            color: 'white',
+                                                            outline: 'none',
+                                                            boxSizing: 'border-box',
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.35)';
+                                                        }}
                                                     />
-                                                    <MapPin size={16} className="absolute text-gray-400 pointer-events-none" style={{ left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
+                                                    <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255, 255, 255, 0.4)', display: 'flex', alignItems: 'center' }}>
+                                                        <MapPin size={16} />
+                                                    </div>
+                                                </div>
+                                                {/* Quick Le Five Suggestions */}
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                                                    {["La Courneuve", "Bobigny", "Bezons", "Paris 17", "Paris 18", "Créteil"].map((center) => (
+                                                        <button
+                                                            key={center}
+                                                            type="button"
+                                                            onClick={() => setLocation(`LE FIVE ${center}`)}
+                                                            style={{
+                                                                background: location === `LE FIVE ${center}` ? 'rgba(56, 189, 248, 0.20)' : 'rgba(255, 255, 255, 0.05)',
+                                                                border: location === `LE FIVE ${center}` ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.10)',
+                                                                color: location === `LE FIVE ${center}` ? '#38BDF8' : 'rgba(255, 255, 255, 0.65)',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '10px',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.15s ease',
+                                                            }}
+                                                            className="hover:border-[#38BDF8] hover:text-[#38BDF8]"
+                                                        >
+                                                            {center}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm font-medium mb-1">
+
+                                            <div style={{ minWidth: 0 }}>
+                                                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                     Prix (Optionnel)
                                                 </label>
-                                                <div className="relative w-full">
+                                                <div style={{ position: 'relative', width: '100%' }}>
                                                     <input
                                                         type="text"
                                                         placeholder="Ex: 10€"
                                                         value={price}
                                                         onChange={(e) => setPrice(e.target.value)}
-                                                        className="w-full bg-[#2A2A2A] text-white placeholder:text-gray-500 focus:outline-none focus:bg-[#1a1a1a] transition-all duration-300 shadow-lg border-none ring-0"
-                                                        style={{ borderRadius: '20px', padding: '0 1rem', height: '38px', fontSize: '1rem' }}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '46px',
+                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            borderRadius: '14px',
+                                                            padding: '0 16px',
+                                                            fontSize: '14px',
+                                                            fontFamily: 'inherit',
+                                                            color: 'white',
+                                                            outline: 'none',
+                                                            boxSizing: 'border-box',
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.35)';
+                                                        }}
                                                     />
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Commentaire */}
-                                        <div style={{ paddingRight: '25px' }}>
-                                            <label className="block text-gray-400 text-sm font-medium mb-1">
+                                        <div style={{ width: '100%' }}>
+                                            <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                                                 Commentaire (Optionnel)
                                             </label>
                                             <textarea
                                                 placeholder="Infos supplémentaires..."
                                                 value={comment}
                                                 onChange={(e) => setComment(e.target.value)}
-                                                className="w-full bg-[#2A2A2A] text-white placeholder:text-gray-500 focus:outline-none focus:bg-[#1a1a1a] transition-all duration-300 shadow-lg border-none ring-0"
-                                                style={{ borderRadius: '20px', padding: '1rem', minHeight: '80px', fontSize: '1rem', resize: 'none' }}
+                                                style={{
+                                                    width: '100%',
+                                                    minHeight: '85px',
+                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    borderRadius: '14px',
+                                                    padding: '12px 16px',
+                                                    fontSize: '14px',
+                                                    fontFamily: 'inherit',
+                                                    color: 'white',
+                                                    outline: 'none',
+                                                    boxSizing: 'border-box',
+                                                    transition: 'all 0.2s ease',
+                                                    resize: 'vertical'
+                                                }}
+                                                onFocus={(e) => {
+                                                    e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+                                                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+                                                }}
+                                                onBlur={(e) => {
+                                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.35)';
+                                                }}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Actions - Bottom with spacing */}
+                                    {/* Footer Action Buttons */}
                                     <div style={{
                                         display: 'flex',
-                                        justifyContent: 'center',
-                                        gap: '64px',
-                                        marginTop: '40px',
-                                        marginBottom: '40px'
+                                        justifyContent: 'flex-end',
+                                        gap: '12px',
+                                        marginTop: '28px',
+                                        paddingTop: '20px',
+                                        borderTop: '1px solid rgba(255, 255, 255, 0.06)'
                                     }}>
                                         <button
                                             type="button"
                                             onClick={onClose}
-                                            className="text-gray-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
-                                            style={{ padding: '0.8rem 3rem', borderRadius: '20px', background: '#2A2A2A' }}
+                                            style={{
+                                                padding: '12px 24px',
+                                                borderRadius: '12px',
+                                                fontSize: '13px',
+                                                fontFamily: 'inherit',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                color: 'rgba(255, 255, 255, 0.7)',
+                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                                e.currentTarget.style.color = '#fff';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                            }}
                                         >
                                             Annuler
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg hover:shadow-[#5865F2]/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                            style={{ padding: '0.8rem 3rem', borderRadius: '20px' }}
+                                            style={{
+                                                padding: '12px 28px',
+                                                borderRadius: '12px',
+                                                fontSize: '13px',
+                                                fontFamily: 'inherit',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                                color: 'white',
+                                                border: 'none',
+                                                boxShadow: '0 6px 20px rgba(34, 197, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                                            onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={16} /> : null}
-                                            {loading ? "Envoi..." : "Envoyer l'appel"}
+                                            <span>Envoyer l'appel</span>
                                         </button>
                                     </div>
                                 </form>

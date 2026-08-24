@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { sendDiscordWebhook } from "@/lib/discord";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: Request) {
     try {
@@ -54,45 +55,40 @@ export async function GET(req: Request) {
         let bestSlot = null;
         let maxCount = -1;
 
-        // Iterate through each day and find 4-hour windows
+        // 1. Iterate through each day and find 2-hour windows (1h30 Five match)
         for (const [dateKey, hoursMap] of Object.entries(slotsByDate)) {
-            // Check hours from 0 to 20 (since 20+3=23 is the last possible 4h block end)
-            for (let h = 0; h <= 20; h++) {
+            for (let h = 8; h <= 22; h++) {
                 const u1 = hoursMap[h];
                 const u2 = hoursMap[h + 1];
-                const u3 = hoursMap[h + 2];
-                const u4 = hoursMap[h + 3];
 
-                // If any hour in the chain is missing, skip
-                if (!u1 || !u2 || !u3 || !u4) continue;
+                if (!u1 || !u2) continue;
 
-                // Find intersection: Users present in ALL 4 hours
+                // Find intersection: Users present on both consecutive hours
                 const intersection = new Set(
-                    [...u1].filter(x => u2.has(x) && u3.has(x) && u4.has(x))
+                    [...u1].filter(x => u2.has(x))
                 );
 
                 const count = intersection.size;
-
-                // We want the HIGHEST count.
-                // If counts are equal, prefer the SOONER date/time (which naturally happens if we iterate chronologically, but object keys might be unordered. Let's strictly compare).
-
-                const currentSlotDate = new Date(dateKey); // 00:00 of that day
+                const currentSlotDate = new Date(dateKey);
 
                 if (count > maxCount) {
                     maxCount = count;
                     bestSlot = {
                         dateStr: dateKey,
                         startHour: h,
+                        endHour: h + 2,
+                        durationStr: "1h30",
                         count: count,
                         users: Array.from(intersection)
                     };
                 } else if (count === maxCount && bestSlot) {
-                    // Tie-breaker: Earlier time is better
                     const bestSlotDate = new Date(bestSlot.dateStr);
                     if (currentSlotDate < bestSlotDate || (currentSlotDate.getTime() === bestSlotDate.getTime() && h < bestSlot.startHour)) {
                         bestSlot = {
                             dateStr: dateKey,
                             startHour: h,
+                            endHour: h + 2,
+                            durationStr: "1h30",
                             count: count,
                             users: Array.from(intersection)
                         };
@@ -101,46 +97,69 @@ export async function GET(req: Request) {
             }
         }
 
+        // 2. If no 2h slot found, fallback to best 1h slot
         if (!bestSlot || bestSlot.count === 0) {
-            return NextResponse.json({ message: "No 4-hour slots found with common users" });
+            for (const [dateKey, hoursMap] of Object.entries(slotsByDate)) {
+                for (let h = 8; h <= 23; h++) {
+                    const u = hoursMap[h];
+                    if (!u) continue;
+                    const count = u.size;
+                    const currentSlotDate = new Date(dateKey);
+
+                    if (count > maxCount) {
+                        maxCount = count;
+                        bestSlot = {
+                            dateStr: dateKey,
+                            startHour: h,
+                            endHour: h + 1,
+                            durationStr: "1h",
+                            count: count,
+                            users: Array.from(u)
+                        };
+                    } else if (count === maxCount && bestSlot) {
+                        const bestSlotDate = new Date(bestSlot.dateStr);
+                        if (currentSlotDate < bestSlotDate || (currentSlotDate.getTime() === bestSlotDate.getTime() && h < bestSlot.startHour)) {
+                            bestSlot = {
+                                dateStr: dateKey,
+                                startHour: h,
+                                endHour: h + 1,
+                                durationStr: "1h",
+                                count: count,
+                                users: Array.from(u)
+                            };
+                        }
+                    }
+                }
+            }
         }
 
-        // If the best slot is already full (>= 10), we might want to skip or just say "Full".
-        // Requirement was "le plus chaud ... le plus élevé". If it's 10/10 it's VERY hot.
-        // But usually "prévenir" implies we need people. 
-        // existing logic checked `if (count >= 10) return ...`.
-        // I will keep it but maybe we want to notify even if full? 
-        // "il donne un créneau qui n'est absolument pas celui le plus chaud" -> User wants the hottest.
-        // I'll stick to notifying, but maybe change text if full?
-        // Let's assume < 10 for "Manque des joueurs" context.
+        if (!bestSlot || bestSlot.count === 0) {
+            return NextResponse.json({ message: "No active slots found" });
+        }
 
         if (bestSlot.count >= 10) {
-            return NextResponse.json({ message: "Best 4-hour slot is already full", slot: bestSlot });
+            return NextResponse.json({ message: "Best slot is already full", slot: bestSlot });
         }
 
         const missing = 10 - bestSlot.count;
         const dateObj = new Date(bestSlot.dateStr);
         const dateFormatted = dateObj.toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' });
 
-        // 2. Send Discord Reminder
+        // 3. Send Discord Reminder
         const embed = {
             title: "🔥 LE CRÉNEAU CHAUD DU MOMENT",
-            description: `Le meilleur créneau de 4h est le **${dateFormatted} de ${bestSlot.startHour}h à ${bestSlot.startHour + 4}h** !`,
+            description: `Le créneau le plus chaud est le **${dateFormatted} de ${bestSlot.startHour}h à ${bestSlot.endHour}h** (${bestSlot.durationStr}) !`,
             color: 0xEAB308, // Yellow
             fields: [
-                { name: "👥 Inscrits (4h)", value: `${bestSlot.count}/10`, inline: true },
+                { name: `👥 Inscrits (${bestSlot.durationStr})`, value: `${bestSlot.count}/10`, inline: true },
                 { name: "🔥 Manquants", value: `${missing} joueurs`, inline: true },
                 { name: "🔗 Rejoindre", value: "[Clique ici pour compléter le Five !](https://planifive.vercel.app/)" }
             ],
-            footer: { text: "Planifive • Reminder 4h" },
+            footer: { text: "Planifive • Rappel Créneau" },
             timestamp: new Date().toISOString(),
         };
 
-        if (process.env.NODE_ENV !== 'development' || req.url.includes('dryRun')) {
-            await sendDiscordWebhook(embed);
-        } else {
-            console.log("Dev mode: Webhook not sent", JSON.stringify(embed, null, 2));
-        }
+        await sendDiscordWebhook(embed);
 
         return NextResponse.json({ success: true, slot: bestSlot, embed: embed });
     } catch (error) {

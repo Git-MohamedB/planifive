@@ -2,6 +2,7 @@
 
 import { Save, Copy, X, Trash2 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -30,111 +31,206 @@ export default function ConfirmModal({
     if (!isOpen) return null;
     if (typeof window === 'undefined') return null;
 
+    const isDanger = type === "danger";
+
     const modalContent = (
-        <div
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                zIndex: zIndex,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}
-            onClick={onClose}
-        >
+        <AnimatePresence>
             <div
                 style={{
-                    background: 'linear-gradient(to bottom right, #1A1A1A, #0F0F0F)',
-                    borderRadius: '32px',
-                    border: '1px solid #333',
-                    maxWidth: '28rem',
-                    width: '100%',
-                    minHeight: '26rem',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
-                    overflow: 'hidden',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(2, 8, 4, 0.75)',
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                    zIndex: zIndex,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.25rem',
                 }}
-                onClick={(e) => e.stopPropagation()}
+                onClick={onClose}
             >
-                {/* Header */}
-                <div style={{
-                    background: 'linear-gradient(to bottom right, #222, #181818)',
-                    padding: '2rem 1.5rem',
-                    borderBottom: '1px solid #333',
-                    position: 'relative',
-                    borderTopLeftRadius: '32px',
-                    borderTopRightRadius: '32px',
-                }}>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                    transition={{ type: 'spring', damping: 26, stiffness: 350 }}
+                    style={{
+                        background: "rgba(8, 10, 12, 0.98)",
+                        backdropFilter: 'blur(32px)',
+                        WebkitBackdropFilter: 'blur(32px)',
+                        borderRadius: '24px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
+                        maxWidth: '430px',
+                        width: '100%',
+                        position: 'relative',
+                        padding: '32px 28px 26px 28px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Close Button - Liquid Glass Capsule */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-3 rounded-full bg-transparent border-none text-[#B3B3B3] cursor-pointer transition-all duration-300 hover:bg-white/10 hover:text-white flex items-center justify-center"
+                        style={{
+                            position: 'absolute',
+                            top: '18px',
+                            right: '18px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            backdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.10)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                        title="Fermer"
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{
-                            padding: '1rem',
-                            borderRadius: '1rem',
-                            background: type === "save" ? 'rgba(30, 215, 96, 0.1)' : type === "danger" ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-                            border: type === "save" ? '1px solid rgba(30, 215, 96, 0.3)' : type === "danger" ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.3)',
-                        }}>
-                            {type === "save" ? (
-                                <Save size={32} color="#1ED760" />
-                            ) : type === "danger" ? (
-                                <Trash2 size={32} color="#EF4444" />
-                            ) : (
-                                <Copy size={32} color="white" />
-                            )}
-                        </div>
-                        <h2 style={{
-                            fontSize: '1.5rem',
-                            fontWeight: 'bold',
+                    {/* Emblem Icon - Clean Liquid Glass */}
+                    <div
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '18px',
+                            background: isDanger ? 'rgba(239, 68, 68, 0.10)' : 'rgba(34, 197, 94, 0.10)',
+                            border: isDanger ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)',
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '16px',
+                        }}
+                    >
+                        {type === "save" ? (
+                            <Save size={28} color="#22C55E" />
+                        ) : type === "danger" ? (
+                            <Trash2 size={28} color="#EF4444" />
+                        ) : (
+                            <Copy size={28} color="#22C55E" />
+                        )}
+                    </div>
+
+                    {/* Title */}
+                    <h2
+                        style={{
+                            fontSize: '20px',
+                            fontWeight: 800,
                             color: 'white',
                             textAlign: 'center',
-                        }}>
-                            {title}
-                        </h2>
-                    </div>
-                </div>
+                            letterSpacing: '0.01em',
+                            margin: '0 0 8px 0',
+                        }}
+                    >
+                        {title}
+                    </h2>
 
-                {/* Message */}
-                <div style={{ padding: '1.5rem' }}>
-                    <p style={{
-                        color: '#D1D5DB',
-                        textAlign: 'center',
-                        fontSize: '1rem',
-                        lineHeight: '1.75',
-                    }}>
+                    {/* Message Description */}
+                    <p
+                        style={{
+                            color: 'rgba(255, 255, 255, 0.65)',
+                            textAlign: 'center',
+                            fontSize: '13.5px',
+                            lineHeight: '1.55',
+                            margin: '0 0 24px 0',
+                            maxWidth: '340px',
+                        }}
+                    >
                         {message}
                     </p>
-                </div>
 
-                {/* Actions */}
-                <div className="px-6 pt-8 pb-24 flex justify-center" style={{ gap: '2rem' }}>
-                    <button
-                        onClick={onClose}
-                        className="btn-secondary btn-md uppercase tracking-wider font-bold"
-                    >
-                        Annuler
-                    </button>
-                    <button
-                        onClick={handleConfirm}
-                        className={`btn-md uppercase tracking-wider font-bold ${type === "save"
-                            ? 'btn-primary'
-                            : type === "danger"
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'btn-accent'
-                            }`}
-                    >
-                        Confirmer
-                    </button>
-                </div>
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                        <button
+                            onClick={onClose}
+                            style={{
+                                flex: 1,
+                                height: '44px',
+                                borderRadius: '14px',
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                border: '1px solid rgba(255, 255, 255, 0.10)',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                color: 'rgba(255, 255, 255, 0.75)',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)';
+                            }}
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            style={{
+                                flex: 1,
+                                height: '44px',
+                                borderRadius: '14px',
+                                background: isDanger
+                                    ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                                    : 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                                border: '1px solid rgba(255, 255, 255, 0.25)',
+                                boxShadow: isDanger
+                                    ? '0 6px 20px rgba(239, 68, 68, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35)'
+                                    : '0 6px 20px rgba(34, 197, 94, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
+                                color: 'white',
+                                fontWeight: 800,
+                                fontSize: '12px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.filter = 'brightness(1.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.filter = 'brightness(1)';
+                            }}
+                        >
+                            Confirmer
+                        </button>
+                    </div>
+                </motion.div>
             </div>
-        </div>
+        </AnimatePresence>
     );
 
     return createPortal(modalContent, document.body);

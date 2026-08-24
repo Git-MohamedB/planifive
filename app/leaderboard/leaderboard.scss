@@ -9,17 +9,15 @@ html {
     --lighter: #F5F8FC;
     --lightest: var(--white);
 
-    --primary: #7B16FF;
-    --primary-light: #DDD9FF;
-    --primary-trans: rgba(123, 22, 255, 0.4);
+    --primary: #22C55E;
+    --primary-light: #BBF7D0;
+    --primary-trans: rgba(34, 197, 94, 0.4);
 
     --yellow: #FDCB6E;
     --orange: #E17055;
-    --teal: #00CEC9;
+    --teal: #10B981;
 
-    --bg: var(--darkest);
-    --color: var(--lightest);
-    --surface: var(--darker);
+    --surface: rgba(10, 14, 20, 0.96);
 }
 
 $states: (
@@ -48,7 +46,7 @@ $spacers: (
 .leaderboard-container {
     font-size: 1rem;
     color: var(--color);
-    background: var(--bg);
+    background: transparent;
     min-height: 100vh;
 
     h1,
@@ -74,7 +72,6 @@ $spacers: (
         &:hover {
             background: var(--primary-trans);
             color: var(--primary-light);
-            box-shadow: 0px 0px 0px $spacing-unit * 0.5 var(--primary-trans);
         }
     }
 
@@ -154,6 +151,37 @@ $spacers: (
             @media screen and (max-width: 700px) {
                 flex-direction: column;
             }
+        }
+    }
+
+    .c-card {
+        background: rgba(8, 10, 12, 0.95);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+
+        &__header {
+            padding: 1.5rem 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            h3 {
+                margin: 0;
+                font-size: 1.15rem;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                color: white;
+            }
+        }
+
+        &__body {
+            padding: 1rem 1.5rem 1.5rem;
         }
     }
 
@@ -269,12 +297,12 @@ $spacers: (
         }
 
         &:focus {
-            box-shadow: 0px 0px 0px $spacing-unit * 0.5 var(--primary-trans);
+            outline: none;
         }
 
         &:active {
-            box-shadow: 0px 0px 0px $spacing-unit * 0.5 var(--primary-trans), inset 0px 0px $spacing-unit rgba(black, 0.2);
             filter: brightness(0.8);
+            outline: none;
         }
     }
 
@@ -298,14 +326,19 @@ $spacers: (
         justify-content: center;
         width: $size;
         height: $size;
-        background: var(--lightest);
-        color: var(--dark);
-        border-radius: $spacing-unit * 0.5;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 1.2rem;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
         @media screen and (max-width: 700px) {
             $size: $spacing-unit*3;
             width: $size;
             height: $size;
+            font-size: 1rem;
         }
     }
 
@@ -313,10 +346,6 @@ $spacers: (
         .c-button--#{$key} {
             background: $val;
         }
-    }
-
-    .u-text--title {
-        /* font-family removed */
     }
 
     .u-text {

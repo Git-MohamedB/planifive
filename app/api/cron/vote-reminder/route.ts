@@ -1,72 +1,89 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { sendDiscordWebhook } from "@/lib/discord";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: Request) {
     try {
-        // Security Check (simple secret check for cron)
+        // Security Check (secret check for cron)
         const authHeader = req.headers.get('authorization');
         if (process.env.NODE_ENV !== 'development' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 1. Fetch All Future Calls
         const now = new Date();
-        const futureCalls = await prisma.call.findMany({
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        // 1. Fetch All Active & Upcoming Calls (from today onwards)
+        const allCalls = await prisma.call.findMany({
             where: {
-                date: { gte: now }
+                date: { gte: todayStart }
             },
             include: {
-                responses: true
+                responses: true,
+                creator: { select: { id: true, name: true } }
             },
             orderBy: { date: 'asc' }
         });
 
-        if (futureCalls.length === 0) {
-            return NextResponse.json({ message: "No future calls found. No ping sent." });
+        // Filter out calls from today whose hour has already passed
+        const currentHour = now.getHours();
+        const activeCalls = allCalls.filter(call => {
+            const callDate = new Date(call.date);
+            callDate.setHours(0, 0, 0, 0);
+            if (callDate.getTime() > todayStart.getTime()) return true;
+            return call.hour > currentHour;
+        });
+
+        if (activeCalls.length === 0) {
+            return NextResponse.json({ message: "Aucun appel actif en cours. Aucun ping nécessaire." });
         }
 
-        // 2. Fetch All Users with Discord Accounts + Future Availabilities
-        // We need the discord ID to mention them
-        // We also check their availabilities to see if they "implicitly" voted
-        // 2. Fetch All Users with Discord Accounts + Future Availabilities
-        // We need the discord ID to mention them
-        // We also check their availabilities to see if they "implicitly" voted
-        const allUsers = await prisma.user.findMany({
+        // 2. Fetch All Active Users with Discord Accounts + Availabilities
+        const allUsers: any[] = await prisma.user.findMany({
             where: {
-                isBanned: false // EXCLUDE BANNED USERS
+                isBanned: false
             },
             include: {
                 accounts: {
                     where: { provider: 'discord' }
                 },
                 availabilities: {
-                    where: { date: { gte: now } }
+                    where: { date: { gte: todayStart } }
                 }
             }
         } as any);
 
-        // 3. Identification Logic
-        const missingVotesByUser: Record<string, { discordId: string, name: string, missingDates: string[] }> = {};
+        // 3. Identification of Unresponded Users
+        const missingVotesByUser: Record<string, { discordId: string, name: string, missingCalls: string[] }> = {};
 
-        for (const user of allUsers) {
-            const discordAccount = user.accounts[0];
+        for (const user of (allUsers as any[])) {
+            const discordAccount = (user as any).accounts?.[0];
             if (!discordAccount?.providerAccountId) continue;
 
             const missingForThisUser: string[] = [];
 
-            for (const call of futureCalls) {
-                const hasResponded = call.responses.some(r => r.userId === user.id);
-                const hasAvailability = user.availabilities.some(a =>
-                    new Date(a.date).toDateString() === new Date(call.date).toDateString() &&
-                    a.hour === call.hour
-                );
+            for (const call of activeCalls) {
+                // The creator has already confirmed
+                const isCreator = call.creatorId === user.id;
+                // Explicit response (ACCEPTED or DECLINED)
+                const hasResponded = call.responses.some((r: any) => r.userId === user.id);
+                // Implicit presence on the grid
+                const hasAvailability = user.availabilities.some((a: any) => {
+                    const aDate = new Date(a.date);
+                    aDate.setHours(0, 0, 0, 0);
+                    const cDate = new Date(call.date);
+                    cDate.setHours(0, 0, 0, 0);
+                    return aDate.getTime() === cDate.getTime() && a.hour === call.hour;
+                });
 
-                if (!hasResponded && !hasAvailability) {
-                    const dateStr = new Date(call.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'numeric' });
-                    missingForThisUser.push(dateStr);
+                if (!isCreator && !hasResponded && !hasAvailability) {
+                    const dateObj = new Date(call.date);
+                    const dateStr = dateObj.toLocaleDateString("fr-FR", { weekday: 'short', day: 'numeric', month: 'short' });
+                    missingForThisUser.push(`${dateStr} à ${call.hour}h00 (${call.location})`);
                 }
             }
 
@@ -74,7 +91,7 @@ export async function GET(req: Request) {
                 missingVotesByUser[user.id] = {
                     discordId: discordAccount.providerAccountId,
                     name: user.name || "Joueur",
-                    missingDates: missingForThisUser
+                    missingCalls: missingForThisUser
                 };
             }
         }
@@ -82,52 +99,42 @@ export async function GET(req: Request) {
         const missingUserIds = Object.keys(missingVotesByUser);
 
         if (missingUserIds.length === 0) {
-            return NextResponse.json({ message: "Everyone has voted! No ping sent." });
+            return NextResponse.json({ message: "Tous les joueurs ont répondu aux appels ! Aucun ping envoyé." });
         }
 
-        // 4. Construct Consolidated Message
-        // Mentions must be in content to PING
+        // 4. Construct Consolidated Discord Message
         let mentionsString = "";
-        let description = "**Des votes sont manquants pour les prochains Five !**\n\n";
+        let description = "**Des réponses sont manquantes pour les prochains appels de Five !**\n\n";
 
         for (const userId of missingUserIds) {
             const data = missingVotesByUser[userId];
-            const datesString = data.missingDates.join(", ");
+            const callsList = data.missingCalls.join("\n   • ");
 
-            // Add to Notification content
             mentionsString += `<@${data.discordId}> `;
-
-            // Add to Embed description
-            description += `**${data.name}** : Pas de réponse pour le **${datesString}**\n`;
+            description += `👤 **${data.name}** :\n   • ${callsList}\n\n`;
         }
 
-        description += "\n👉 [Rendez-vous sur PlaniFive pour voter !](https://planifive.vercel.app/)";
+        description += "👉 [Répondre sur PlaniFive](https://planifive.vercel.app/) *(ou clique directement sur les boutons sous le message de l'appel !)*";
 
         const embed = {
-            title: "📢 Rappel de Vote",
+            title: "📢 Rappel de Disponibilité - Appel Five",
             description: description,
-            color: 0xF1C40F, // Yellow/Orange for alert
-            footer: { text: "Planifive • Merci de répondre rapidement !" },
+            color: 0xF1C40F, // Amber
+            footer: { text: "Planifive • Merci de confirmer ta présence ou ton absence !" },
             timestamp: new Date().toISOString(),
         };
 
         // 5. Send Webhook
-        if (process.env.NODE_ENV !== 'development' || req.url.includes('dryRun')) {
-            // Pass mentionsString as "content" to trigger push notification
-            await sendDiscordWebhook(embed, mentionsString);
-        } else {
-            console.log("Dev mode: Webhook not sent", JSON.stringify(embed, null, 2));
-            console.log("Mentions Content:", mentionsString);
-        }
+        await sendDiscordWebhook(embed, mentionsString);
 
         return NextResponse.json({
             success: true,
-            message: `Sent reminders to ${missingUserIds.length} users.`,
+            message: `Rappels envoyés à ${missingUserIds.length} joueur(s).`,
             missingCount: missingUserIds.length
         });
 
     } catch (error) {
-        console.error("Error in vote-reminder:", error);
+        console.error("Error in vote-reminder cron:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

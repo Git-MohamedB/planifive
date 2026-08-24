@@ -1,0 +1,15 @@
+name: Hot Slot Reminder
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -X GET https://planifive.vercel.app/api/cron/reminder \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

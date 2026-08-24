@@ -1,0 +1,15 @@
+name: Match MVP Reminder
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  mvp-remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -X GET https://planifive.vercel.app/api/cron/match-mvp-reminder \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

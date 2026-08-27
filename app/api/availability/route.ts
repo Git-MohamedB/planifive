@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "../../../lib/prisma";
 import { authOptions } from "../../../lib/auth";
+import { getDemoAvailabilities, isDemoSession } from "@/lib/demoData";
 
 type SlotData = {
   users: { id: string; name: string | null; image: string | null }[];
@@ -14,6 +15,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "Non connecté" }, { status: 401 });
+
+  if (isDemoSession(session)) {
+    return NextResponse.json(getDemoAvailabilities(session.user.id));
+  }
 
   const { searchParams } = new URL(req.url);
   const startParam = searchParams.get("start");
@@ -61,6 +66,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
+
+  if (isDemoSession(session)) {
+    return NextResponse.json({ status: "added", isDemo: true });
+  }
 
   const body = await req.json();
   const userId = session.user.id;
@@ -260,6 +269,10 @@ export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "401" }, { status: 401 });
+
+    if (isDemoSession(session)) {
+      return NextResponse.json({ status: "synced", isDemo: true, count: 5 });
+    }
 
     const body = await req.json();
     const userId = session.user.id;

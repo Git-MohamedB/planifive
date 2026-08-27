@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getDemoDashboardData, isDemoSession } from "@/lib/demoData";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    if (isDemoSession(session)) {
+      return NextResponse.json(getDemoDashboardData());
+    }
+
     const userId = session?.user?.id;
 
     const now = new Date();

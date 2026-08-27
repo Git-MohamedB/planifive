@@ -2,9 +2,23 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions, isAdmin } from "@/lib/auth";
+import { DEMO_USERS, isDemoSession } from '@/lib/demoData';
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+        if (isDemoSession(session)) {
+            return NextResponse.json(DEMO_USERS.map(u => ({
+                id: u.id,
+                name: u.name,
+                image: u.image,
+                customName: u.customName,
+                isBanned: false,
+                technique: u.technique,
+                cardio: u.cardio,
+            })));
+        }
+
         const users = await prisma.user.findMany({
             orderBy: { name: 'asc' },
             select: {

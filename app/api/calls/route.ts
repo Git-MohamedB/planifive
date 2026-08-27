@@ -3,11 +3,21 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions, isAdmin } from "@/lib/auth";
 import { sendDiscordWebhook } from "@/lib/discord";
+import { isDemoSession } from "@/lib/demoData";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (isDemoSession(session)) {
+        return NextResponse.json({
+            id: "demo-call-created",
+            status: "success",
+            message: "Appel simulé avec succès en mode démo (aucune notification Discord réelle)",
+            isDemo: true,
+        });
     }
 
     const user = await prisma.user.findUnique({ where: { email: session.user.email } });

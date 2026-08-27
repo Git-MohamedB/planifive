@@ -7,6 +7,7 @@ import { useState, useCallback } from "react";
 import CallModal from "@/components/CallModalFinalV2";
 import { motion } from "framer-motion";
 import { LiquidLogo } from "@/components/ui/LiquidLogo";
+import { Sparkles } from "lucide-react";
 
 export default function PlanningPage() {
   const { data: session } = useSession();
@@ -74,29 +75,55 @@ export default function PlanningPage() {
             </p>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => signIn("discord")}
-            style={{
-              width: '100%',
-              padding: '16px 24px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 8px 24px rgba(34, 197, 94, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              cursor: 'pointer',
-              fontSize: '15px',
-              fontWeight: 700,
-            }}
-          >
-            <span>Connexion Discord</span>
-          </motion.button>
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => signIn("discord")}
+              style={{
+                width: '100%',
+                padding: '15px 24px',
+                borderRadius: '16px',
+                background: 'linear-gradient(180deg, rgba(88, 101, 242, 0.95) 0%, rgba(67, 78, 196, 0.98) 100%)',
+                color: 'white',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 24px rgba(88, 101, 242, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 800,
+              }}
+            >
+              <span>Continuer avec Discord</span>
+            </motion.button>
+
+            <button
+              onClick={() => signIn("demo-login", { callbackUrl: "/planning" })}
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                color: 'rgba(255, 255, 255, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
+              }}
+              className="hover:text-white hover:bg-white/[0.07] hover:border-white/20 active:scale-[0.98]"
+            >
+              <Sparkles size={13} color="#22C55E" />
+              <span>Accès Mode Démo</span>
+            </button>
+          </div>
         </div>
       </div>
     );

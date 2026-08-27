@@ -3,12 +3,21 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordWebhook } from "@/lib/discord";
+import { isDemoSession } from "@/lib/demoData";
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
     const { slotLabel, date, location, team1 = [], team2 = [] } = body;
+
+    if (isDemoSession(session)) {
+      return NextResponse.json({
+        success: true,
+        message: "Équipes validées en simulation démo (aucun envoi Discord réel) !",
+        isDemo: true,
+      });
+    }
 
     const team1PlayerNames = team1.map((p: any) => (p.customName || p.name || "Joueur").trim());
     const team2PlayerNames = team2.map((p: any) => (p.customName || p.name || "Joueur").trim());

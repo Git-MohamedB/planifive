@@ -2,12 +2,22 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions, isAdmin } from "@/lib/auth";
+import { DEMO_MATCHES, isDemoSession } from '@/lib/demoData';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+        if (isDemoSession(session)) {
+            return NextResponse.json(DEMO_MATCHES, {
+                headers: {
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                },
+            });
+        }
+
         let matches: any[] = [];
         try {
             matches = await prisma.$queryRawUnsafe<any[]>('SELECT * FROM "Match" ORDER BY "date" DESC');

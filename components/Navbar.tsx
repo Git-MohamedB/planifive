@@ -301,8 +301,10 @@ export default function Navbar({ stats, title, icon, onOpenCallModal }: NavbarPr
                 {displayName}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }} />
-                <span style={{ fontSize: '10px', color: '#22C55E', fontWeight: '500' }}>Connecté</span>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (session?.user as any)?.isDemo ? '#38BDF8' : '#22C55E' }} />
+                <span style={{ fontSize: '10px', color: (session?.user as any)?.isDemo ? '#38BDF8' : '#22C55E', fontWeight: '700' }}>
+                  {(session?.user as any)?.isDemo ? 'Mode Démo' : 'Connecté'}
+                </span>
               </div>
             </div>
           </div>

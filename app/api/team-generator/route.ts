@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPlayerRating } from "@/lib/playerRatings";
+import { DEMO_USERS } from "@/lib/demoData";
 
 interface PlayerInput {
   id?: string;
@@ -18,35 +19,50 @@ export async function POST(request: Request) {
 
     let players: PlayerInput[] = [];
 
-    // 1. Fetch DB players
+    // 1. Fetch DB players or Demo players
     if (playerIds.length > 0) {
-      const dbUsers = await prisma.user.findMany({
-        where: { id: { in: playerIds } },
-        select: {
-          id: true,
-          name: true,
-          customName: true,
-          image: true,
-          technique: true,
-          cardio: true,
-        },
-      });
+      const demoMatches = DEMO_USERS.filter((u) => playerIds.includes(u.id));
+      if (demoMatches.length > 0) {
+        players = demoMatches.map((u) => {
+          const overall = Math.round(((u.technique * 0.6 + u.cardio * 0.4) * 2) * 10) / 10;
+          return {
+            id: u.id,
+            name: u.customName || u.name,
+            image: u.image,
+            technique: u.technique,
+            cardio: u.cardio,
+            overall,
+          };
+        });
+      } else {
+        const dbUsers = await prisma.user.findMany({
+          where: { id: { in: playerIds } },
+          select: {
+            id: true,
+            name: true,
+            customName: true,
+            image: true,
+            technique: true,
+            cardio: true,
+          },
+        });
 
-      players = dbUsers.map((u) => {
-        const displayName = u.customName || u.name || "Joueur";
-        const hardcoded = getPlayerRating(displayName);
-        const technique = u.technique ?? hardcoded.technique;
-        const cardio = u.cardio ?? hardcoded.cardio;
-        const overall = Math.round(((technique * 0.6 + cardio * 0.4) * 2) * 10) / 10;
-        return {
-          id: u.id,
-          name: displayName,
-          image: u.image,
-          technique,
-          cardio,
-          overall,
-        };
-      });
+        players = dbUsers.map((u) => {
+          const displayName = u.customName || u.name || "Joueur";
+          const hardcoded = getPlayerRating(displayName);
+          const technique = u.technique ?? hardcoded.technique;
+          const cardio = u.cardio ?? hardcoded.cardio;
+          const overall = Math.round(((technique * 0.6 + cardio * 0.4) * 2) * 10) / 10;
+          return {
+            id: u.id,
+            name: displayName,
+            image: u.image,
+            technique,
+            cardio,
+            overall,
+          };
+        });
+      }
     }
 
     // 2. Add any custom / guest players

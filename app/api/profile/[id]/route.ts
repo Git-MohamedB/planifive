@@ -113,46 +113,47 @@ export async function GET(
     const cardio = user.cardio ?? hardcodedRating.cardio;
     const overall = Math.round(((technique * 0.6 + cardio * 0.4) * 2) * 10) / 10;
 
-    // Fetch user matches by relation
-    const matchesByRelation = await prisma.match.findMany({
-      where: {
-        OR: [{ team1: { some: { id: userId } } }, { team2: { some: { id: userId } } }],
-      },
-      orderBy: { date: "desc" },
-      include: {
-        team1: { select: { id: true, name: true, customName: true, image: true } },
-        team2: { select: { id: true, name: true, customName: true, image: true } },
-      },
-    });
-
-    // Also fetch matches where the player appears in team1Names or team2Names
     const playerNames = [user.name, user.customName].filter(Boolean).map(n => n!.toLowerCase());
-    const allMatches = await prisma.match.findMany({
-      where: {
-        OR: [
-          { team1Names: { not: null } },
-          { team2Names: { not: null } },
-        ],
-      },
-      orderBy: { date: "desc" },
-      include: {
-        team1: { select: { id: true, name: true, customName: true, image: true } },
-        team2: { select: { id: true, name: true, customName: true, image: true } },
-      },
-    });
 
-    // Merge matches: include matches where player is in teamXNames but not already in relation matches
-    const relationMatchIds = new Set(matchesByRelation.map(m => m.id));
-    const nameMatches = allMatches.filter(m => {
-      if (relationMatchIds.has(m.id)) return false;
+    // Parallelize all data fetching for profile
+    const [allMatches, availabilities, communityRatings] = await Promise.all([
+      prisma.match.findMany({
+        orderBy: { date: "desc" },
+        include: {
+          team1: { select: { id: true, name: true, customName: true, image: true } },
+          team2: { select: { id: true, name: true, customName: true, image: true } },
+        },
+      }),
+      prisma.availability.findMany({
+        where: { userId },
+        select: { hour: true },
+      }),
+      (async () => {
+        try {
+          return await prisma.$queryRawUnsafe<any[]>(
+            `SELECT "pac", "sho", "pas", "dri", "def", "phy", "voterUserId"
+             FROM "FUTCardRating"
+             WHERE "targetUserId" = $1 OR "targetUserId" = $2 OR "targetUserId" = $3`,
+            user.id,
+            user.name || "",
+            user.customName || ""
+          );
+        } catch {
+          return [];
+        }
+      })(),
+    ]);
+
+    // Filter matches where player participated
+    const matches = allMatches.filter((m) => {
+      const inT1 = m.team1.some((u) => u.id === userId);
+      const inT2 = m.team2.some((u) => u.id === userId);
+      if (inT1 || inT2) return true;
+
       const t1Names = m.team1Names ? JSON.parse(m.team1Names).map((n: string) => n.toLowerCase()) : [];
       const t2Names = m.team2Names ? JSON.parse(m.team2Names).map((n: string) => n.toLowerCase()) : [];
-      return playerNames.some(pn => t1Names.includes(pn) || t2Names.includes(pn));
+      return playerNames.some((pn) => t1Names.includes(pn) || t2Names.includes(pn));
     });
-
-    const matches = [...matchesByRelation, ...nameMatches].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
 
     let wins = 0;
     let losses = 0;
@@ -275,11 +276,6 @@ export async function GET(
       }
     });
 
-    const availabilities = await prisma.availability.findMany({
-      where: { userId },
-      select: { hour: true },
-    });
-
     availabilities.forEach((a) => {
       hourCounts[a.hour] = (hourCounts[a.hour] || 0) + 1;
     });
@@ -293,35 +289,6 @@ export async function GET(
         favHour = Number(h);
       }
     });
-
-    // ─── Community Peer Ratings (Moyenne des notes attribuées par les autres) ───
-    let communityRatings: any[] = [];
-    try {
-      communityRatings = await prisma.$queryRawUnsafe(
-        `SELECT "pac", "sho", "pas", "dri", "def", "phy", "voterUserId"
-         FROM "FUTCardRating"
-         WHERE "targetUserId" = $1 OR "targetUserId" = $2 OR "targetUserId" = $3`,
-        user.id,
-        user.name || "",
-        user.customName || ""
-      );
-    } catch (e) {
-      console.warn("Could not query community ratings via SQL:", e);
-      try {
-        const model = (prisma as any).fUTCardRating || (prisma as any).futCardRating;
-        if (model) {
-          communityRatings = await model.findMany({
-            where: {
-              OR: [
-                { targetUserId: user.id },
-                ...(user.name ? [{ targetUserId: user.name }] : []),
-                ...(user.customName ? [{ targetUserId: user.customName }] : []),
-              ],
-            },
-          });
-        }
-      } catch {}
-    }
 
     const voterId = session?.user?.id || session?.user?.email || "";
     const myRating = communityRatings.find((r: any) => r.voterUserId === voterId) || null;

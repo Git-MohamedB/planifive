@@ -26,83 +26,90 @@ export async function GET() {
     const nextSunday = new Date(currentMonday);
     nextSunday.setDate(currentMonday.getDate() + 7);
 
-    // 1. Fetch Dispos for this week
-    const weekAvailabilities = await prisma.availability.findMany({
-      where: {
-        date: {
-          gte: currentMonday,
-          lt: nextSunday,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            customName: true,
-            image: true,
-            accentColor: true,
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // ── PARALLEL EXECUTION (Single round-trip to Supabase) ──
+    const [weekAvailabilities, activeCalls, allMatches, allDbUsers, currentUser] = await Promise.all([
+      // 1. Dispos for this week
+      prisma.availability.findMany({
+        where: {
+          date: {
+            gte: currentMonday,
+            lt: nextSunday,
           },
         },
-      },
-    });
-
-    // 2. Fetch Active Calls
-    const activeCalls = await prisma.call.findMany({
-      where: {
-        date: {
-          gte: today,
-        },
-      },
-      orderBy: {
-        date: "asc",
-      },
-      take: 3,
-      include: {
-        creator: {
-          select: { id: true, name: true, customName: true, image: true },
-        },
-        responses: {
-          include: {
-            user: { select: { id: true, name: true, customName: true, image: true } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              customName: true,
+              image: true,
+              accentColor: true,
+            },
           },
         },
-      },
-    });
+      }),
 
-    // 3. Fetch Recent Matches
-    const recentMatches = await prisma.match.findMany({
-      orderBy: { date: "desc" },
-      take: 5,
-      include: {
-        team1: { select: { id: true, name: true, customName: true, image: true } },
-        team2: { select: { id: true, name: true, customName: true, image: true } },
-      },
-    });
+      // 2. Active Calls
+      prisma.call.findMany({
+        where: {
+          date: {
+            gte: today,
+          },
+        },
+        orderBy: {
+          date: "asc",
+        },
+        take: 3,
+        include: {
+          creator: {
+            select: { id: true, name: true, customName: true, image: true },
+          },
+          responses: {
+            include: {
+              user: { select: { id: true, name: true, customName: true, image: true } },
+            },
+          },
+        },
+      }),
 
-    // 4. Compute Personal User Stats (if logged in)
+      // 3. ALL Matches (Used for Recent Matches, User Stats, and Month MVP)
+      prisma.match.findMany({
+        orderBy: { date: "desc" },
+        include: {
+          team1: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
+          team2: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
+        },
+      }),
+
+      // 4. All Users
+      prisma.user.findMany({
+        where: { isBanned: false },
+        select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true },
+      }),
+
+      // 5. Current User (if logged in)
+      userId
+        ? prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true, customName: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    // ── Derive Recent Matches (Top 5) ──
+    const recentMatches = allMatches.slice(0, 5);
+
+    // ── Compute Personal User Stats ──
     let userStats = null;
     let userDisposCountThisWeek = 0;
-    if (userId) {
-      // Get the current user's name and customName for text-based matching
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true, customName: true },
-      });
 
+    if (userId) {
       const userName = currentUser?.name?.toLowerCase() || "";
       const userCustomName = currentUser?.customName?.toLowerCase() || "";
 
-      // Fetch ALL matches (we need to check team1Names/team2Names text fields too)
-      const allMatches = await prisma.match.findMany({
-        include: {
-          team1: { select: { id: true } },
-          team2: { select: { id: true } },
-        },
-        orderBy: { date: "desc" },
-      });
-
-      // Helper to safely parse team names whether they are JSON arrays or plain strings
       const parseNames = (raw: any): string[] => {
         if (!raw) return [];
         if (Array.isArray(raw)) return raw;
@@ -117,9 +124,7 @@ export async function GET() {
         return [];
       };
 
-      // Filter matches where the user participated (by ID relation OR by name in team1Names/team2Names)
       const userMatches = allMatches.filter((m) => {
-        // Check by user ID in relations
         const inTeam1ById = m.team1.some((u: any) => u.id === userId);
         const inTeam2ById = m.team2.some((u: any) => u.id === userId);
         if (inTeam1ById || inTeam2ById) return true;
@@ -139,7 +144,6 @@ export async function GET() {
       let draws = 0;
 
       userMatches.forEach((m) => {
-        // Determine which team the user is on
         const inTeam1ById = m.team1.some((u: any) => u.id === userId);
         const inTeam2ById = m.team2.some((u: any) => u.id === userId);
 
@@ -157,7 +161,6 @@ export async function GET() {
         else losses++;
       });
 
-      // Compute current win streak from recent matches (ordered by date DESC)
       let currentStreak = 0;
       for (const m of userMatches) {
         const inTeam1ById = m.team1.some((u: any) => u.id === userId);
@@ -175,14 +178,12 @@ export async function GET() {
         if (userWon && !isDraw) {
           currentStreak++;
         } else {
-          break; // Stop counting streak as soon as there's a non-win
+          break;
         }
       }
 
       const totalMatches = userMatches.length;
       const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
-
-      // User's filled slots this week
       userDisposCountThisWeek = weekAvailabilities.filter((a) => a.userId === userId).length;
 
       userStats = {
@@ -196,7 +197,7 @@ export async function GET() {
       };
     }
 
-    // 5. Compute Group Dispo Users
+    // ── Compute Group Dispo Users ──
     const weekUsersMap = new Map<string, any>();
     (weekAvailabilities as any[]).forEach((a: any) => {
       if (a.user && !weekUsersMap.has(a.user.id)) {
@@ -205,7 +206,7 @@ export async function GET() {
     });
     const weekUsers = Array.from(weekUsersMap.values());
 
-    // 6. Find Top / Best Golden Slots for this week
+    // ── Find Top / Best Golden Slots for this week ──
     const slotsMap = new Map<string, { date: string; hour: number; count: number; users: any[] }>();
     (weekAvailabilities as any[]).forEach((a: any) => {
       const dStr = a.date.toISOString().split("T")[0];
@@ -221,18 +222,17 @@ export async function GET() {
     const sortedSlots = Array.from(slotsMap.values()).sort((a, b) => b.count - a.count);
     const bestSlots = sortedSlots.slice(0, 5);
 
-    // 7. Compute 7-day trend (Monday to Sunday)
+    // ── Compute 7-day trend (Monday to Sunday) ──
     const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
     const dailyTrend = DAYS_SHORT.map((label, index) => {
       const dayDate = new Date(currentMonday);
       dayDate.setDate(currentMonday.getDate() + index);
       const dStr = dayDate.toISOString().split("T")[0];
-      
+
       const dayDispos = weekAvailabilities.filter(
         (a) => a.date.toISOString().split("T")[0] === dStr
       );
 
-      // Unique users on this day
       const dayUniqueUsers = new Set(dayDispos.map((a) => a.userId)).size;
 
       return {
@@ -243,41 +243,13 @@ export async function GET() {
       };
     });
 
-    const totalCommunityUsers = await prisma.user.count({
-      where: { isBanned: false },
-    });
+    const totalCommunityUsers = allDbUsers.length;
 
-    // 8. Compute Month MVP (Joueur du Mois / Dernier MVP)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // ── Compute Month MVP (Derived from allMatches in-memory) ──
+    const monthMatches = allMatches.filter((m) => new Date(m.date).getTime() >= thirtyDaysAgo.getTime());
+    const poolMatches = monthMatches.length > 0 ? monthMatches : allMatches.slice(0, 40);
+    const isLastMonthFallback = monthMatches.length === 0;
 
-    let monthMatches = await prisma.match.findMany({
-      where: { date: { gte: thirtyDaysAgo } },
-      orderBy: { date: "desc" },
-      include: {
-        team1: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
-        team2: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
-      },
-    });
-
-    let isLastMonthFallback = false;
-    if (monthMatches.length === 0) {
-      // Fallback: take all recorded matches to find the most recent MVP
-      monthMatches = await prisma.match.findMany({
-        orderBy: { date: "desc" },
-        take: 40,
-        include: {
-          team1: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
-          team2: { select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true } },
-        },
-      });
-      isLastMonthFallback = true;
-    }
-
-    // Fetch all users for name to avatar mapping
-    const allDbUsers = await prisma.user.findMany({
-      select: { id: true, name: true, customName: true, image: true, technique: true, cardio: true },
-    });
     const userByNameMap = new Map<string, typeof allDbUsers[0]>();
     allDbUsers.forEach((u) => {
       if (u.name) userByNameMap.set(u.name.toLowerCase(), u);
@@ -286,11 +258,10 @@ export async function GET() {
 
     const playerMonthStats: Record<string, { id: string; name: string; image?: string; matches: number; wins: number; technique: number; cardio: number }> = {};
 
-    monthMatches.forEach((m) => {
+    poolMatches.forEach((m) => {
       const wonT1 = m.scoreTeam1 > m.scoreTeam2;
       const wonT2 = m.scoreTeam2 > m.scoreTeam1;
 
-      // 1. From Relations
       m.team1.forEach((u) => {
         const key = u.id;
         if (!playerMonthStats[key]) playerMonthStats[key] = { id: u.id, name: u.customName || u.name || "Joueur", image: u.image || undefined, matches: 0, wins: 0, technique: u.technique || 3.5, cardio: u.cardio || 3.5 };
@@ -305,7 +276,6 @@ export async function GET() {
         if (wonT2) playerMonthStats[key].wins++;
       });
 
-      // 2. From team1Names / team2Names JSON
       let t1Names: string[] = [];
       let t2Names: string[] = [];
       try { if (m.team1Names) t1Names = JSON.parse(m.team1Names); } catch {}
@@ -372,7 +342,6 @@ export async function GET() {
       if (!monthMvp) {
         monthMvp = candidate;
       } else {
-        // Preference: min 2 matches, then higher win rate, then more wins
         if (candidate.matches >= 2 && monthMvp.matches < 2) {
           monthMvp = candidate;
         } else if (candidate.matches >= 2 && monthMvp.matches >= 2) {

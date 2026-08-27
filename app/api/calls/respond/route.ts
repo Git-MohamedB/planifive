@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { isDemoSession } from "@/lib/demoData";
 
 export async function POST(req: Request) {
     console.log("🟢 [API] POST /api/calls/respond called");
@@ -13,8 +14,15 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        console.log("🔵 [API] Body:", body);
-        const { callId, status } = body; // status: "ACCEPTED" | "DECLINED"
+        const { callId, status } = body;
+
+        if (isDemoSession(session)) {
+            return NextResponse.json({
+                success: true,
+                response: { id: "demo-resp", callId, userId: session.user.id, status },
+                isDemo: true,
+            });
+        }
 
         if (!callId || !status) {
             console.log("🔴 [API] Missing callId or status");

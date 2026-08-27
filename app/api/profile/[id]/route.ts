@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlayerRating } from "@/lib/playerRatings";
+import { getDemoProfile, isDemoSession } from "@/lib/demoData";
 
 export async function GET(
   request: Request,
@@ -15,6 +16,10 @@ export async function GET(
     let targetId = id;
     if (targetId === "me" || !targetId || targetId === "undefined") {
       targetId = session?.user?.id || "";
+    }
+
+    if (isDemoSession(session) || (targetId && targetId.startsWith("demo-"))) {
+      return NextResponse.json(getDemoProfile(targetId, session?.user?.id || "demo-user"));
     }
 
     if (!targetId && !session?.user?.email) {

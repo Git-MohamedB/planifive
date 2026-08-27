@@ -332,6 +332,31 @@ export default function DashboardPage() {
               </svg>
               <span>Continuer avec Discord</span>
             </button>
+
+            {/* Demo Mode Button (Discreet, Compact Glass) */}
+            <button
+              onClick={() => signIn("demo-login", { callbackUrl: "/" })}
+              style={{
+                width: "100%",
+                padding: "10px 16px",
+                borderRadius: 14,
+                background: "rgba(255, 255, 255, 0.03)",
+                color: "rgba(255, 255, 255, 0.6)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                transition: "all 0.2s ease",
+              }}
+              className="hover:text-white hover:bg-white/[0.07] hover:border-white/20 active:scale-[0.98]"
+            >
+              <Sparkles size={13} color="#22C55E" />
+              <span>Accès Mode Démo</span>
+            </button>
           </div>
         </div>
       </div>

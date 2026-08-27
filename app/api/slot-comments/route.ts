@@ -2,10 +2,33 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoSession, DEMO_USERS } from "@/lib/demoData";
 
 // GET comments for a specific date & hour, or for an entire date range
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (isDemoSession(session)) {
+      return NextResponse.json([
+        {
+          id: "demo-comment-1",
+          userId: "demo-user-2",
+          date: new Date().toISOString(),
+          hour: 20,
+          type: "COMMENT",
+          message: "Chaud pour le match de 20h !",
+          createdAt: new Date().toISOString(),
+          user: {
+            id: DEMO_USERS[1].id,
+            name: DEMO_USERS[1].name,
+            customName: DEMO_USERS[1].customName,
+            image: DEMO_USERS[1].image,
+            accentColor: DEMO_USERS[1].accentColor,
+          },
+        },
+      ]);
+    }
+
     const { searchParams } = new URL(request.url);
     const dateStr = searchParams.get("date");
     const hourStr = searchParams.get("hour");

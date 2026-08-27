@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoSession } from "@/lib/demoData";
 
 export async function POST(
   request: Request,
@@ -19,6 +20,17 @@ export async function POST(
 
     if (!votedPlayerName || typeof votedPlayerName !== "string") {
       return NextResponse.json({ error: "Joueur invalide" }, { status: 400 });
+    }
+
+    // Interception Mode Démo (Simulation sans DB)
+    if (isDemoSession(session)) {
+      return NextResponse.json({
+        success: true,
+        mvpWinner: votedPlayerName.trim(),
+        mvpVotes: { "demo-user": votedPlayerName.trim() },
+        voteCounts: { [votedPlayerName.trim()]: 3 },
+        myVote: votedPlayerName.trim(),
+      });
     }
 
     const match = await prisma.match.findUnique({

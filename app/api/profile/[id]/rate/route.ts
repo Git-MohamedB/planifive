@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isDemoSession } from "@/lib/demoData";
 
 export async function POST(
   request: Request,
@@ -18,6 +19,23 @@ export async function POST(
     const { pac, sho, pas, dri, def, phy } = body;
 
     const clamp = (val: any) => Math.min(99, Math.max(50, Math.round(Number(val) || 75)));
+
+    if (isDemoSession(session)) {
+      const cleanPac = clamp(pac);
+      const cleanSho = clamp(sho);
+      const cleanPas = clamp(pas);
+      const cleanDri = clamp(dri);
+      const cleanDef = clamp(def);
+      const cleanPhy = clamp(phy);
+      const ovr = Math.round(cleanPac * 0.15 + cleanSho * 0.25 + cleanPas * 0.15 + cleanDri * 0.2 + cleanDef * 0.1 + cleanPhy * 0.15);
+
+      return NextResponse.json({
+        success: true,
+        ratingsCount: 5,
+        fut: { ovr, pac: cleanPac, sho: cleanSho, pas: cleanPas, dri: cleanDri, def: cleanDef, phy: cleanPhy },
+        myRating: { pac: cleanPac, sho: cleanSho, pas: cleanPas, dri: cleanDri, def: cleanDef, phy: cleanPhy },
+      });
+    }
 
     const voterId = session.user.id || session.user.email || "anon";
     const voterName = session.user.name || session.user.email?.split("@")[0] || "Joueur";

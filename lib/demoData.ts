@@ -303,18 +303,28 @@ export function getDemoDashboardData() {
     };
   });
 
-  const tuesdayDate = new Date(currentMonday);
-  tuesdayDate.setDate(currentMonday.getDate() + 1);
-  const tuesdayStr = tuesdayDate.toISOString().split("T")[0];
-
   const fridayDate = new Date(currentMonday);
   fridayDate.setDate(currentMonday.getDate() + 4);
   const fridayStr = fridayDate.toISOString().split("T")[0];
 
+  const saturdayDate = new Date(currentMonday);
+  saturdayDate.setDate(currentMonday.getDate() + 5);
+  const saturdayStr = saturdayDate.toISOString().split("T")[0];
+
+  const sundayDate = new Date(currentMonday);
+  sundayDate.setDate(currentMonday.getDate() + 6);
+  const sundayStr = sundayDate.toISOString().split("T")[0];
+
   const bestSlots = [
     {
-      date: tuesdayStr,
+      date: fridayStr,
       hour: 20,
+      count: 10,
+      users: DEMO_USERS.slice(0, 10).map(u => ({ id: u.id, name: u.customName, image: u.image })),
+    },
+    {
+      date: saturdayStr,
+      hour: 18,
       count: 10,
       users: DEMO_USERS.slice(0, 10).map(u => ({ id: u.id, name: u.customName, image: u.image })),
     },
@@ -325,16 +335,10 @@ export function getDemoDashboardData() {
       users: DEMO_USERS.slice(0, 9).map(u => ({ id: u.id, name: u.customName, image: u.image })),
     },
     {
-      date: tuesdayStr,
-      hour: 21,
-      count: 8,
-      users: DEMO_USERS.slice(0, 8).map(u => ({ id: u.id, name: u.customName, image: u.image })),
-    },
-    {
-      date: fridayStr,
+      date: sundayStr,
       hour: 20,
-      count: 7,
-      users: DEMO_USERS.slice(1, 8).map(u => ({ id: u.id, name: u.customName, image: u.image })),
+      count: 10,
+      users: DEMO_USERS.slice(1, 11).map(u => ({ id: u.id, name: u.customName, image: u.image })),
     },
   ];
 
@@ -354,12 +358,12 @@ export function getDemoDashboardData() {
       {
         id: "demo-call-1",
         creatorId: "demo-user",
-        date: tuesdayDate.toISOString(),
+        date: fridayDate.toISOString(),
         hour: 20,
         location: "Le Five Créteil",
         duration: 60,
         price: "10€",
-        comment: "Match chaud de mardi soir ! Prenez vos crampons.",
+        comment: "Match chaud de vendredi soir ! Prenez vos crampons.",
         creator: DEMO_USERS[0],
         responses: DEMO_USERS.slice(0, 8).map(u => ({
           id: `resp-${u.id}`,
@@ -408,21 +412,27 @@ export function getDemoAvailabilities(userId = "demo-user") {
       const key = `${dateStr}-${h}`;
       let slotUsers: DemoUser[] = [];
 
-      if (dayOffset === 1 && h === 20) {
-        // Tuesday 20h = 10 users (Golden Slot)
+      if (dayOffset === 4 && h === 20) {
+        // Friday 20h = 10 users (Golden Slot)
         slotUsers = DEMO_USERS.slice(0, 10);
-      } else if (dayOffset === 1 && h === 21) {
-        slotUsers = DEMO_USERS.slice(0, 8);
+      } else if (dayOffset === 5 && h === 18) {
+        // Saturday 18h = 10 users (Golden Slot)
+        slotUsers = DEMO_USERS.slice(0, 10);
+      } else if (dayOffset === 6 && h === 20) {
+        // Sunday 20h = 10 users (Golden Slot)
+        slotUsers = DEMO_USERS.slice(1, 11);
       } else if (dayOffset === 4 && h === 19) {
+        // Friday 19h = 9 users
         slotUsers = DEMO_USERS.slice(0, 9);
-      } else if (dayOffset === 4 && h === 20) {
-        slotUsers = DEMO_USERS.slice(1, 8);
-      } else if (dayOffset === 2 && h === 19) {
-        slotUsers = DEMO_USERS.slice(2, 8);
-      } else if (dayOffset === 3 && h === 20) {
-        slotUsers = DEMO_USERS.slice(0, 7);
-      } else if (dayOffset === 0 && h === 20) {
-        slotUsers = DEMO_USERS.slice(3, 8);
+      } else if (dayOffset === 3 && h === 21) {
+        // Thursday 21h = 8 users
+        slotUsers = DEMO_USERS.slice(0, 8);
+      } else if (dayOffset === 5 && h === 20) {
+        // Saturday 20h = 7 users
+        slotUsers = DEMO_USERS.slice(2, 9);
+      } else if (dayOffset === 6 && h === 18) {
+        // Sunday 18h = 6 users
+        slotUsers = DEMO_USERS.slice(3, 9);
       }
 
       if (slotUsers.length > 0) {

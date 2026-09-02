@@ -4,6 +4,7 @@ Planifive est une application web fullstack conçue pour automatiser l'organisat
 
 Le projet transforme l'organisation traditionnellement chaotique des matchs (sondages éparpillés sur WhatsApp, déséquilibres de niveau, désistements imprévus) en une expérience fluide et automatisée grâce à une interface réactive, un algorithme d'équilibrage d'équipes et une passerelle bidirectionnelle avec Discord.
 
+Pour tester la démo : https://planifive.vercel.app/
 ---
 
 ## 1. Fonctionnalités et Parcours Utilisateur

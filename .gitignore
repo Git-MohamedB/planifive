@@ -42,3 +42,10 @@ next-env.d.ts
 
 /app/generated/prisma
 repo-utile/
+
+# local databases and debug dumps
+*.log
+db_dump.json
+prisma/*.db
+prisma/*.db-journal
+

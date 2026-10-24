@@ -27,8 +27,7 @@ export default function Navbar({ stats, title, icon, onOpenCallModal }: NavbarPr
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-  const ADMIN_EMAILS = ["admin@planifive.app"];
-  const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+  const isAdmin = Boolean(session?.user?.isAdmin);
 
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
 

@@ -56,8 +56,7 @@ export default function HistoryPage() {
     const [deletingMatchId, setDeletingMatchId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const ADMIN_EMAILS = ["admin@planifive.app"];
-    const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+    const isAdmin = Boolean(session?.user?.isAdmin);
 
     // Vérification de l'authentification (Optionnel : on laisse tout le monde voir, mais seul l'admin peut modifier)
     /*

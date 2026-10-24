@@ -107,8 +107,7 @@ export default function PlanningGrid({ onUpdateStats, onOpenCallModal }: Plannin
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
   const [allCommunityUsers, setAllCommunityUsers] = useState<any[]>([]);
 
-  const ADMIN_EMAILS = ["admin@planifive.app"];
-  const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+  const isAdmin = Boolean(session?.user?.isAdmin);
 
   useEffect(() => {
     fetch("/api/users")

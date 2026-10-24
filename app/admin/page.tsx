@@ -105,8 +105,7 @@ export default function AdminPage() {
     const [newGuestCardio, setNewGuestCardio] = useState("3.0");
     const [creatingGuest, setCreatingGuest] = useState(false);
 
-    const ADMIN_EMAILS = ["admin@planifive.app"];
-    const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+    const isAdmin = Boolean(session?.user?.isAdmin);
 
     const handleCreateGuest = async (e: React.FormEvent) => {
         e.preventDefault();

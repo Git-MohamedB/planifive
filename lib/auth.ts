@@ -10,6 +10,7 @@ declare module "next-auth" {
     accentColor?: string;
     customName?: string;
     isDemo?: boolean;
+    isAdmin?: boolean;
   }
   interface Session {
     user: {
@@ -18,6 +19,7 @@ declare module "next-auth" {
       accentColor?: string;
       customName?: string;
       isDemo?: boolean;
+      isAdmin?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -148,6 +150,8 @@ export const authOptions: NextAuthOptions = {
         token.customName = (user as any).customName || null;
         // @ts-ignore
         token.isDemo = user.id === "demo-user" || (user as any).isDemo === true;
+        // @ts-ignore
+        token.isAdmin = isAdmin(user.email);
       }
       if (trigger === "update" && session) {
         if (session.accentColor) token.accentColor = session.accentColor;
@@ -167,15 +171,20 @@ export const authOptions: NextAuthOptions = {
         session.user.customName = (token.customName as string) || null;
         // @ts-ignore
         session.user.isDemo = token.isDemo || token.id === "demo-user";
+        // @ts-ignore
+        session.user.isAdmin = Boolean(token.isAdmin) || isAdmin(token.email as string | undefined);
       }
       return session;
     },
   },
 };
 
-export const ADMIN_EMAILS = ["admin@planifive.app"];
+export const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 export function isAdmin(email?: string | null): boolean {
   if (!email) return false;
-  return ADMIN_EMAILS.some((adminEmail) => adminEmail.toLowerCase() === email.trim().toLowerCase());
+  return ADMIN_EMAILS.some((adminEmail) => adminEmail === email.trim().toLowerCase());
 }

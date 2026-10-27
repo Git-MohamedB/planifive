@@ -45,7 +45,24 @@ repo-utile/
 
 # local databases and debug dumps
 *.log
-db_dump.json
+db_dump*.json
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
+
+# local debug and one-off scripts
+check_env_keys.js
+check_users.js
+debug_db.js
+fix_account.js
+read_webhook.js
+restore_env.js
+generate-readme.mjs
+README.generated.md
+$null
 
